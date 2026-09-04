@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <languages><language>es</language></languages>
+  <surveys>
+    <rows>
+      <row><sid>900005</sid><language>es</language><format>G</format></row>
+    </rows>
+  </surveys>
+  <surveys_languagesettings>
+    <rows>
+      <row>
+        <surveyls_survey_id>900005</surveyls_survey_id>
+        <surveyls_language>es</surveyls_language>
+        <surveyls_title>Ejemplo sintético de diagnósticos de preguntas</surveyls_title>
+      </row>
+    </rows>
+  </surveys_languagesettings>
+  <groups>
+    <rows>
+      <row><gid>10</gid><sid>900005</sid><group_name>Grupo de encuesta 1</group_name><group_order>0</group_order></row>
+    </rows>
+  </groups>
+  <questions>
+    <rows>
+      <row>
+        <qid>100</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>S</type><title>QUESTION_1</title><question>Pregunta de encuesta 1: campo válido</question><question_order>0</question_order>
+      </row>
+      <row>
+        <qid>101</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>S</type><title>DUPLICATE_QUESTION</title><question>Pregunta de encuesta 2: primera aparición del código repetido</question><question_order>1</question_order>
+      </row>
+      <row>
+        <qid>102</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>T</type><title>DUPLICATE_QUESTION</title><question>Pregunta de encuesta 3: segunda aparición del código repetido</question><question_order>2</question_order>
+      </row>
+      <row>
+        <qid>103</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>S</type><title></title><question>Pregunta de encuesta 4: campo sin código</question><question_order>3</question_order>
+      </row>
+      <row>
+        <qid>104</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>Z</type><title>UNSUPPORTED_QUESTION</title><question>Pregunta de encuesta 5: tipo no soportado</question><question_order>4</question_order>
+      </row>
+      <row>
+        <qid>105</qid><parent_qid>0</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>L</type><title>QUESTION_WITHOUT_OPTIONS</title><question>Pregunta de encuesta 6: selección sin opciones de respuesta</question><question_order>5</question_order>
+      </row>
+    </rows>
+  </questions>
+  <subquestions>
+    <rows>
+      <row>
+        <qid>106</qid><parent_qid>999</parent_qid><sid>900005</sid><gid>10</gid>
+        <type>T</type><title>RESPONSE_ITEM_1</title><question>Elemento de respuesta 1: padre inexistente</question><question_order>0</question_order>
+      </row>
+    </rows>
+  </subquestions>
+  <answers><rows /></answers>
+  <question_attributes><rows /></question_attributes>
+  <conditions><rows /></conditions>
+</document>

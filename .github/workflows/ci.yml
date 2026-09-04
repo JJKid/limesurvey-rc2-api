@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q -m "not integration"
+        env:
+          ENV: test
+          FORM_BUILDER_SERVICE_JWT_SECRET: test-form-builder-secret-with-at-least-32-characters
+          DICTIONARY_SERVICE_JWT_SECRET: test-dictionary-secret-with-at-least-32-characters
+      - run: docker build -t limesurvey-rc2-api:test .

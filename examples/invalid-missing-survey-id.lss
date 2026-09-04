@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <languages>
+    <language>es</language>
+  </languages>
+  <surveys>
+    <rows>
+      <row><language>es</language><format>G</format></row>
+    </rows>
+  </surveys>
+</document>
+

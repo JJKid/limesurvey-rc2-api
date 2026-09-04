@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <languages><language>es</language></languages>
+  <surveys>
+    <rows>
+      <row><sid>900006</sid><language>es</language><format>G</format></row>
+    </rows>
+  </surveys>
+  <surveys_languagesettings>
+    <rows>
+      <row>
+        <surveyls_survey_id>900006</surveyls_survey_id>
+        <surveyls_language>es</surveyls_language>
+        <surveyls_title>Ejemplo sintético de validación dinámica</surveyls_title>
+      </row>
+    </rows>
+  </surveys_languagesettings>
+  <groups>
+    <rows>
+      <row><gid>10</gid><sid>900006</sid><group_name>Grupo de encuesta 1</group_name><group_order>0</group_order></row>
+    </rows>
+  </groups>
+  <questions>
+    <rows>
+      <row>
+        <qid>200</qid><parent_qid>0</parent_qid><sid>900006</sid><gid>10</gid>
+        <type>N</type><title>QUESTION_1</title><question>Pregunta de encuesta 1: indique la cantidad mínima requerida</question><question_order>0</question_order>
+      </row>
+      <row>
+        <qid>201</qid><parent_qid>0</parent_qid><sid>900006</sid><gid>10</gid>
+        <type>M</type><title>QUESTION_2</title><question>Pregunta de encuesta 2: seleccione opciones de respuesta</question><question_order>1</question_order>
+      </row>
+    </rows>
+  </questions>
+  <subquestions>
+    <rows>
+      <row>
+        <qid>202</qid><parent_qid>201</parent_qid><sid>900006</sid><gid>10</gid>
+        <type>T</type><title>RESPONSE_OPTION_1</title><question>Opción 1 de respuesta</question><question_order>0</question_order>
+      </row>
+    </rows>
+  </subquestions>
+  <answers><rows /></answers>
+  <question_attributes>
+    <rows>
+      <row>
+        <qaid>1</qaid><qid>201</qid><attribute>min_answers</attribute><value>QUESTION_1.NAOK</value><language></language>
+      </row>
+    </rows>
+  </question_attributes>
+  <conditions><rows /></conditions>
+</document>

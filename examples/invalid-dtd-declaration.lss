@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document [
+  <!ENTITY synthetic "synthetic value">
+]>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <surveys>
+    <rows>
+      <row><sid>900004</sid><language>es</language></row>
+    </rows>
+  </surveys>
+</document>

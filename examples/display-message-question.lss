@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <languages><language>es</language></languages>
+  <surveys>
+    <rows><row><sid>900008</sid><language>es</language><format>G</format></row></rows>
+  </surveys>
+  <surveys_languagesettings>
+    <rows>
+      <row>
+        <surveyls_survey_id>900008</surveyls_survey_id>
+        <surveyls_language>es</surveyls_language>
+        <surveyls_title>Ejemplo sintético de texto informativo</surveyls_title>
+      </row>
+    </rows>
+  </surveys_languagesettings>
+  <groups>
+    <rows><row><gid>10</gid><sid>900008</sid><group_name>Grupo de encuesta 1</group_name><group_order>0</group_order></row></rows>
+  </groups>
+  <questions>
+    <rows>
+      <row>
+        <qid>100</qid><parent_qid>0</parent_qid><sid>900008</sid><gid>10</gid>
+        <type>X</type><title>QUESTION_1</title>
+        <question>Pregunta de encuesta 1: texto informativo que no espera una respuesta.</question>
+        <relevance>1</relevance><question_order>0</question_order><mandatory>N</mandatory>
+      </row>
+    </rows>
+  </questions>
+  <subquestions><rows /></subquestions>
+  <answers><rows /></answers>
+  <question_attributes><rows /></question_attributes>
+  <conditions><rows /></conditions>
+</document>

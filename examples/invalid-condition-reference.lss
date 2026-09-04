@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <LimeSurveyDocType>Survey</LimeSurveyDocType>
+  <DBVersion>708</DBVersion>
+  <languages>
+    <language>es</language>
+  </languages>
+  <surveys>
+    <rows>
+      <row>
+        <sid><![CDATA[900001]]></sid>
+        <language><![CDATA[es]]></language>
+        <format><![CDATA[G]]></format>
+      </row>
+    </rows>
+  </surveys>
+  <surveys_languagesettings>
+    <rows>
+      <row>
+        <surveyls_survey_id><![CDATA[900001]]></surveyls_survey_id>
+        <surveyls_language><![CDATA[es]]></surveyls_language>
+        <surveyls_title><![CDATA[Ejemplo sintético con referencia faltante]]></surveyls_title>
+      </row>
+    </rows>
+  </surveys_languagesettings>
+  <groups>
+    <rows>
+      <row>
+        <gid><![CDATA[10]]></gid>
+        <sid><![CDATA[900001]]></sid>
+        <group_name><![CDATA[Grupo de encuesta 1]]></group_name>
+        <group_order><![CDATA[0]]></group_order>
+      </row>
+    </rows>
+  </groups>
+  <questions>
+    <rows>
+      <row>
+        <qid><![CDATA[100]]></qid>
+        <parent_qid><![CDATA[0]]></parent_qid>
+        <sid><![CDATA[900001]]></sid>
+        <gid><![CDATA[10]]></gid>
+        <type><![CDATA[S]]></type>
+        <title><![CDATA[QUESTION_1]]></title>
+        <question><![CDATA[Pregunta de encuesta 1: contiene una referencia inexistente]]></question>
+        <relevance><![CDATA[MISSING_QUESTION.NAOK == "Y"]]></relevance>
+        <question_order><![CDATA[0]]></question_order>
+        <mandatory><![CDATA[N]]></mandatory>
+      </row>
+    </rows>
+  </questions>
+  <subquestions><rows /></subquestions>
+  <answers><rows /></answers>
+  <question_attributes><rows /></question_attributes>
+  <conditions><rows /></conditions>
+</document>
