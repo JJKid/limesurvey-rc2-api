@@ -1,4 +1,4 @@
-"""Regenerate deterministic SurveyLoadResult snapshots for the checked-in LSS fixtures."""
+"""Regenerate SurveyLoadResult snapshots for optional, untracked local LSS fixtures."""
 
 from __future__ import annotations
 

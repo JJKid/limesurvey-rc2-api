@@ -16,7 +16,8 @@ LSS_FIXTURES = tuple(sorted(FIXTURE_DIRECTORY.glob("*.lss")))
 EXAMPLE_DIRECTORY = Path(__file__).parents[1] / "examples"
 
 
-@pytest.mark.parametrize("path", LSS_FIXTURES, ids=lambda path: path.stem)
+@pytest.mark.skipif(not LSS_FIXTURES, reason="Optional local LSS fixtures are not installed.")
+@pytest.mark.parametrize("path", LSS_FIXTURES, ids=[path.stem for path in LSS_FIXTURES])
 def test_supported_lss_fixtures_produce_survey_structure(path):
     load_result = survey_structure_from_lss(path.read_bytes())
     survey = load_result["survey"]
@@ -28,7 +29,8 @@ def test_supported_lss_fixtures_produce_survey_structure(path):
     assert survey["fields"]
 
 
-@pytest.mark.parametrize("path", LSS_FIXTURES, ids=lambda path: f"golden-{path.stem}")
+@pytest.mark.skipif(not LSS_FIXTURES, reason="Optional local LSS fixtures are not installed.")
+@pytest.mark.parametrize("path", LSS_FIXTURES, ids=[f"golden-{path.stem}" for path in LSS_FIXTURES])
 def test_lss_fixture_matches_complete_golden_result(path):
     expected_path = (
         FIXTURE_DIRECTORY / "survey_load_result_783587.json"

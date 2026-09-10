@@ -272,6 +272,10 @@ pip install -r requirements.txt
 pytest -q -m "not integration"
 ```
 
+Las pruebas sintéticas están incluidas. Las comparaciones adicionales con
+exportaciones locales de `tests/fixtures/` se omiten explícitamente si esa
+carpeta no está presente; sus datos no se publican en este repositorio.
+
 Prueba de integración real:
 
 ```bash
