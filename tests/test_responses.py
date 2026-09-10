@@ -1,7 +1,22 @@
 import asyncio
 import json
+import pytest
+from pydantic import ValidationError
+from schemas import SurveyResponseDataset
 
 from services.remote_response_loader import ResponseExportTooLargeError, load_responses
+
+
+def test_dataset_rejects_nonfinite_values_in_nested_responses():
+    with pytest.raises(ValidationError):
+        SurveyResponseDataset(surveyId="synthetic", responses=[{"Q01": {"R1": float("nan")}}])
+
+
+def test_dataset_matches_identifiers_to_response_rows():
+    with pytest.raises(ValidationError):
+        SurveyResponseDataset(surveyId="synthetic", responses=[{"Q01": "A1"}], responseIds=[])
+    value = SurveyResponseDataset(surveyId="synthetic", responses=[{"Q01": "A1"}], responseIds=["capture-1"])
+    assert value.responseIds == ["capture-1"]
 
 
 class DummySurveyOperations:
@@ -22,8 +37,10 @@ class DummyApi:
 def test_response_endpoint_returns_dataset_without_caching(client, auth_headers, monkeypatch):
     content = json.dumps({"responses": [{"Q01": "A1"}]}).encode()
     api = DummyApi(content)
-    monkeypatch.setattr("routers.responses.resume_limesurvey_client", lambda session_key, auth: api)
-    monkeypatch.setattr("routers.responses.enforce_response_export_rate_limit", lambda session_key, sid: None)
+    async def resume(_session_key, _auth): return api
+    async def allow(_session_key, _sid): return None
+    monkeypatch.setattr("routers.responses.resume_limesurvey_client", resume)
+    monkeypatch.setattr("routers.responses.enforce_response_export_rate_limit", allow)
 
     response = client.get(
         "/survey_responses/123?language=es&completionStatus=complete&fields=Q01,Q02",
@@ -51,8 +68,10 @@ def test_response_endpoint_returns_dataset_without_caching(client, auth_headers,
 
 def test_response_endpoint_returns_original_csv(client, auth_headers, monkeypatch):
     api = DummyApi(b"id,Q01\n1,A1\n")
-    monkeypatch.setattr("routers.responses.resume_limesurvey_client", lambda session_key, auth: api)
-    monkeypatch.setattr("routers.responses.enforce_response_export_rate_limit", lambda session_key, sid: None)
+    async def resume(_session_key, _auth): return api
+    async def allow(_session_key, _sid): return None
+    monkeypatch.setattr("routers.responses.resume_limesurvey_client", resume)
+    monkeypatch.setattr("routers.responses.enforce_response_export_rate_limit", allow)
 
     response = client.get(
         "/survey_responses/123",

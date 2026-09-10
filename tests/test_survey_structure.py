@@ -72,6 +72,23 @@ def test_lss_rejects_dtd_and_unknown_database_schema():
         )
 
 
+def test_html_is_reduced_to_visible_plain_text_without_scripts_or_styles():
+    load_result = build_survey_structure({
+        "survey": {"sid": "123", "language": "es"},
+        "language": {"surveyls_title": "<b>Encuesta</b><script>alert(1)</script>"},
+        "questions": [{
+            "qid": "100", "parent_qid": "0", "title": "Q1", "type": "S",
+            "question": "<p>Nombre<br>completo</p><style>body{display:none}</style>",
+            "help": "<strong>Sin abreviaturas</strong>",
+        }],
+    })
+
+    assert load_result["survey"]["title"] == "Encuesta"
+    field = load_result["survey"]["fields"][0]
+    assert field["label"] == "Nombre\ncompleto"
+    assert field["help"] == "Sin abreviaturas"
+
+
 def test_synthetic_display_question_lss_maps_x_without_a_response_field():
     result = survey_structure_from_lss(
         (EXAMPLE_DIRECTORY / "display-message-question.lss").read_bytes()
@@ -137,6 +154,7 @@ def test_synthetic_dynamic_validation_lss_uses_generic_source_reference():
 def test_builder_preserves_source_expression_and_emits_portable_condition():
     load_result = build_survey_structure({
         "survey": {"sid": "900001", "language": "es"},
+        "groups": [{"gid": "10", "group_name": "Synthetic group", "group_order": "0"}],
         "questions": [
             {
                 "qid": "100", "gid": "10", "parent_qid": "0", "title": "SOURCE",
@@ -204,6 +222,7 @@ def test_builder_keeps_group_and_question_visibility_as_separate_neutral_rules()
 def test_builder_normalizes_internal_child_aliases_and_type_specific_validation():
     load_result = build_survey_structure({
         "survey": {"sid": "survey-synthetic", "language": "es"},
+        "groups": [{"gid": "10", "group_name": "Synthetic group", "group_order": "0"}],
         "questions": [
             {
                 "qid": "100", "gid": "10", "parent_qid": "0", "title": "SERVICES",
@@ -345,6 +364,7 @@ def test_each_supported_native_type_has_an_explicit_semantic_mapping(native_type
 
     result = build_survey_structure({
         "survey": {"sid": "synthetic-types", "language": "es"},
+        "groups": [{"gid": "10", "group_name": "Synthetic group", "group_order": "0"}],
         "questions": questions,
     })
 
@@ -352,7 +372,25 @@ def test_each_supported_native_type_has_an_explicit_semantic_mapping(native_type
     assert result["survey"]["fields"][0]["source"]["nativeType"] == native_type
 
 
-@pytest.mark.parametrize("native_type", ["A", "C", "E", "1", "5", ":", "K", "U", "I", "|", "*"])
+def test_matrix_source_order_does_not_mix_row_and_column_scales():
+    result = build_survey_structure({
+        "survey": {"sid": "synthetic-matrix", "language": "es"},
+        "questions": [
+            {"qid": "1", "parent_qid": "0", "title": "Q01", "type": ";", "question": "Question"},
+            {"qid": "2", "parent_qid": "1", "title": "R2", "type": "T", "question": "Row 2", "scale_id": "0", "question_order": "1"},
+            {"qid": "3", "parent_qid": "1", "title": "C1", "type": "T", "question": "Column 1", "scale_id": "1", "question_order": "0"},
+            {"qid": "4", "parent_qid": "1", "title": "R1", "type": "T", "question": "Row 1", "scale_id": "0", "question_order": "0"},
+            {"qid": "5", "parent_qid": "1", "title": "C2", "type": "T", "question": "Column 2", "scale_id": "1", "question_order": "1"},
+        ],
+    })
+    assert result["survey"]["fields"][0]["matrix"] == {
+        "mode": "text",
+        "rows": [{"code": "R1", "label": "Row 1", "order": 0}, {"code": "R2", "label": "Row 2", "order": 1}],
+        "columns": [{"code": "C1", "label": "Column 1", "order": 0}, {"code": "C2", "label": "Column 2", "order": 1}],
+    }
+
+
+@pytest.mark.parametrize("native_type", ["A", "C", "E", "5", "K", "U", "I", "|", "*"])
 def test_unimplemented_native_type_is_reported_instead_of_disappearing(native_type):
     result = build_survey_structure({
         "survey": {"sid": "synthetic-unsupported", "language": "es"},

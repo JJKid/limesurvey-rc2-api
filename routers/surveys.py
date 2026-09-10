@@ -37,11 +37,11 @@ async def list_surveys(
     """
     List available surveys for an active LS session.
     """
-    api = resume_limesurvey_client(session_key, auth)
+    api = await resume_limesurvey_client(session_key, auth)
 
     try:
         cache_key = _survey_list_cache_key(api)
-        cached = None if refresh else cache_repository.get_json(cache_key)
+        cached = None if refresh else await cache_repository.get_json(cache_key)
         if isinstance(cached, list):
             return cached
 
@@ -50,14 +50,14 @@ async def list_surveys(
             timeout=LS_SURVEYS_TIMEOUT_SECONDS,
         )
 
-        cache_repository.set_json(cache_key, surveys, 300)
+        await cache_repository.set_json(cache_key, surveys, 300)
 
         return surveys
     except (TimeoutError, asyncio.TimeoutError):
-        raise_limesurvey_error(
+        await raise_limesurvey_error(
             session_key,
             Exception(f"list_surveys timed out after {int(LS_SURVEYS_TIMEOUT_SECONDS)}s"),
             "listing surveys",
         )
     except Exception as exc:
-        raise_limesurvey_error(session_key, exc, "listing surveys")
+        await raise_limesurvey_error(session_key, exc, "listing surveys")

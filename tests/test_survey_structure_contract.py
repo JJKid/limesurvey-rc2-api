@@ -42,7 +42,7 @@ def test_survey_structure_returns_the_importer_contract(client, auth_headers, mo
     monkeypatch.setattr(
         survey_structures_router,
         "resume_limesurvey_client",
-        lambda _key, _auth: object(),
+        AsyncMock(return_value=object()),
     )
 
     async def load_result(_api, _sid, _language, refresh=False):

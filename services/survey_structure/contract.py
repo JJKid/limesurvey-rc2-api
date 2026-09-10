@@ -3,64 +3,58 @@
 from __future__ import annotations
 
 import json
-from functools import lru_cache
+import subprocess
 from pathlib import Path
 from typing import Any, Dict
 
-from jsonschema import Draft7Validator
-
-
 SCHEMA_DIRECTORY = Path(__file__).resolve().parents[2] / "schemas"
-SCHEMA_PATHS = {
-    "SurveyStructure": SCHEMA_DIRECTORY / "survey-structure.schema.json",
-    "SurveyLoadResult": SCHEMA_DIRECTORY / "survey-load-result.schema.json",
-}
+VALIDATOR_PATH = SCHEMA_DIRECTORY / "validate-survey.cjs"
+MAX_DOCUMENT_BYTES = 16 * 1024 * 1024
+VALIDATION_TIMEOUT_SECONDS = 5
 
 
 class SurveyStructureContractError(RuntimeError):
     """FastAPI produced a value that violates the shared SurveyStructure contract."""
 
-
-@lru_cache(maxsize=len(SCHEMA_PATHS))
-def _contract_validator(contract_name: str) -> Draft7Validator:
-    """Load and compile one generated JSON Schema once per process."""
-    schema_path = SCHEMA_PATHS[contract_name]
-    with schema_path.open("r", encoding="utf-8") as schema_file:
-        schema = json.load(schema_file)
-    Draft7Validator.check_schema(schema)
-    return Draft7Validator(schema)
+    def __init__(self, message: str, errors: list | None = None):
+        super().__init__(message)
+        self.errors = errors or []
 
 
 def validate_survey_structure(value: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate a survey definition against the generated shared JSON Schema.
-
-    Return the same object when valid. Otherwise report the first failing path.
-    """
-    errors = sorted(
-        _contract_validator("SurveyStructure").iter_errors(value),
-        key=lambda error: list(error.path),
-    )
-    if not errors:
-        return value
-
-    error = errors[0]
-    path = ".".join(str(part) for part in error.absolute_path) or "<root>"
-    raise SurveyStructureContractError(
-        f"SurveyStructure output violates the shared contract at {path}: {error.message}"
-    )
+    """Validate structure and all Zod refinements with the generated local validator."""
+    return _validate_complete_contract("SurveyStructure", value)
 
 
 def validate_survey_load_result(value: Dict[str, Any]) -> Dict[str, Any]:
     """Validate an import/load result and return it unchanged when valid."""
-    errors = sorted(
-        _contract_validator("SurveyLoadResult").iter_errors(value),
-        key=lambda error: list(error.path),
-    )
-    if not errors:
-        return value
+    return _validate_complete_contract("SurveyLoadResult", value)
 
-    error = errors[0]
-    path = ".".join(str(part) for part in error.absolute_path) or "<root>"
+
+def _validate_complete_contract(contract_name: str, value: Dict[str, Any]) -> Dict[str, Any]:
+    # JSON Schema remains the portable description; the bundled Zod code is
+    # authoritative for cross-field rules. Never silently fall back to schema-only.
+    try:
+        payload = json.dumps({"contract": contract_name, "value": value}, allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError) as error:
+        raise SurveyStructureContractError("Survey contract document must contain only JSON values.") from error
+    if len(payload) > MAX_DOCUMENT_BYTES:
+        raise SurveyStructureContractError("Survey contract document exceeds the validation size limit.")
+    try:
+        completed = subprocess.run(
+            ["node", str(VALIDATOR_PATH)], input=payload, capture_output=True,
+            timeout=VALIDATION_TIMEOUT_SECONDS, check=True,
+        )
+        result = json.loads(completed.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        raise RuntimeError("The complete survey contract validator is unavailable.") from error
+    if result.get("success") is True:
+        return value
+    errors = result.get("issues")
+    if not isinstance(errors, list) or not errors:
+        raise RuntimeError("The complete survey contract validator returned an invalid result.")
+    first = errors[0]
+    path = ".".join(str(part) for part in first.get("path", [])) or "<root>"
     raise SurveyStructureContractError(
-        f"SurveyLoadResult output violates the shared contract at {path}: {error.message}"
+        f"{contract_name} output violates the shared contract at {path}: {first['message']}", errors,
     )

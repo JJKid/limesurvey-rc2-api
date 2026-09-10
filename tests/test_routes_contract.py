@@ -139,8 +139,10 @@ def test_surveys_timeout_returns_503(client, auth_headers, monkeypatch):
                 return []
 
     monkeypatch.setattr("routers.surveys.LS_SURVEYS_TIMEOUT_SECONDS", 0.01)
-    monkeypatch.setattr("routers.surveys.resume_limesurvey_client", lambda session_key, auth: DummySurveyApi())
-    monkeypatch.setattr("routers.surveys.cache_repository.get_json", lambda _key: None)
+    async def resume(_session_key, _auth): return DummySurveyApi()
+    async def empty_cache(_key): return None
+    monkeypatch.setattr("routers.surveys.resume_limesurvey_client", resume)
+    monkeypatch.setattr("routers.surveys.cache_repository.get_json", empty_cache)
 
     response = client.get(
         "/surveys",

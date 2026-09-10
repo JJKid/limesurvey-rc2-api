@@ -42,7 +42,7 @@ async def get_survey_structure(
     auth: AuthenticatedIdentity = Depends(verify_token),
 ) -> Dict[str, Any]:
     """Return a validated SurveyLoadResult for one accessible survey id."""
-    api = resume_limesurvey_client(session_key, auth)
+    api = await resume_limesurvey_client(session_key, auth)
     try:
         return await load_remote_survey_structure(api, sid, language, refresh=refresh)
     except asyncio.TimeoutError as exc:
@@ -58,13 +58,18 @@ async def get_survey_structure(
         ) from exc
     except SurveyStructureContractError as exc:
         logger.exception("Remote normalization produced an invalid SurveyStructure for sid=%s", sid)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail={
+            "code": "INVALID_SURVEY_STRUCTURE",
+            "stage": "survey-structure-normalization",
+            "message": str(exc),
+            "errors": exc.errors,
+        }) from exc
     except SurveyGroupsNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
-        raise_limesurvey_error(session_key, exc, f"normalizing survey structure for sid {sid}")
+        await raise_limesurvey_error(session_key, exc, f"normalizing survey structure for sid {sid}")
 
 
 @router.post(
@@ -83,9 +88,14 @@ async def import_lss_as_survey_structure(
         raise HTTPException(status_code=400, detail="Expected a file with .lss extension")
     content = await file.read(20 * 1024 * 1024 + 1)
     try:
-        return survey_structure_from_lss(content, language)
+        return await asyncio.to_thread(survey_structure_from_lss, content, language)
     except SurveyStructureSourceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except SurveyStructureContractError as exc:
         logger.exception("LSS normalization produced an invalid SurveyStructure file=%s", file.filename)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail={
+            "code": "INVALID_SURVEY_STRUCTURE",
+            "stage": "survey-structure-normalization",
+            "message": str(exc),
+            "errors": exc.errors,
+        }) from exc

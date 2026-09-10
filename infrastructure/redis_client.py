@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-import redis
+import redis.asyncio as redis
 
 from core.config import (
     ALLOW_IN_MEMORY_STATE,
@@ -32,7 +32,7 @@ async def initialize_redis() -> None:
             ssl=REDIS_SSL,
             decode_responses=True,
         )
-        client.ping()
+        await client.ping()
         _redis_client = client
         logger.info("Connected to Redis DB %s", REDIS_DB)
     except Exception as exc:
@@ -46,7 +46,7 @@ async def close_redis() -> None:
     """Close the process Redis connection."""
     global _redis_client
     if _redis_client is not None:
-        _redis_client.close()
+        await _redis_client.aclose()
         _redis_client = None
 
 

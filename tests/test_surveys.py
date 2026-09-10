@@ -6,8 +6,9 @@ import pytest
 from services.survey_structure import survey_structure_from_lss
 
 @pytest.mark.integration
-def test_real_limesurvey_round_trip(client, auth_headers):
+def test_real_limesurvey_round_trip(integration_client, auth_headers):
     """Open a real LS session, load one SurveyStructure, and close the session."""
+    client = integration_client
     required = {
         "url": os.getenv("LS_INTEGRATION_URL"),
         "username": os.getenv("LS_INTEGRATION_USERNAME"),
@@ -45,8 +46,9 @@ def test_real_limesurvey_round_trip(client, auth_headers):
 
 
 @pytest.mark.integration
-def test_lss_and_live_remotecontrol_have_the_same_supported_semantics(client, auth_headers):
+def test_lss_and_live_remotecontrol_have_the_same_supported_semantics(integration_client, auth_headers):
     """Compare both source paths when credentials and the matching LSS are provided."""
+    client = integration_client
     required = {
         "url": os.getenv("LS_INTEGRATION_URL"),
         "username": os.getenv("LS_INTEGRATION_USERNAME"),

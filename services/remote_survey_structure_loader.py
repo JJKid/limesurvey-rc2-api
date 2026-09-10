@@ -94,7 +94,7 @@ async def _load_remote_survey_structure(
         },
         "completion_context": _build_response_state(survey_properties, language_properties),
     }
-    return build_survey_structure(source_payload, source_format="remotecontrol")
+    return await asyncio.to_thread(build_survey_structure, source_payload, source_format="remotecontrol")
 
 
 def _build_response_state(

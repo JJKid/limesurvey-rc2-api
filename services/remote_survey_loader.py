@@ -60,7 +60,7 @@ async def load_questions(
     with question data and cache the completed result.
     """
     cache_key = build_grouped_questions_cache_key(api, sid, language)
-    cached_questions = None if refresh else cache_repository.get_json(cache_key)
+    cached_questions = None if refresh else await cache_repository.get_json(cache_key)
     if isinstance(cached_questions, list):
         logger.info(
             "grouped_questions cache hit sid=%s cache_key=%s questions=%s",
@@ -70,7 +70,7 @@ async def load_questions(
         )
         return cached_questions
 
-    params = get_cached_optimal_params(api) or DEFAULT_OPTIMAL_PARAMS
+    params = await get_cached_optimal_params(api) or DEFAULT_OPTIMAL_PARAMS
     semaphore = asyncio.Semaphore(params["semaphore"])
     max_attempts = params["maxAttempts"]
 
@@ -103,7 +103,7 @@ async def load_questions(
     questions = [question for group_result in group_results for question in group_result]
     logger.info("grouped_questions loaded sid=%s questions=%s", sid, len(questions))
 
-    cache_repository.set_json(cache_key, questions, QUESTIONS_CACHE_TTL_SECONDS)
+    await cache_repository.set_json(cache_key, questions, QUESTIONS_CACHE_TTL_SECONDS)
     if questions:
         logger.info(
             "grouped_questions cache set sid=%s cache_key=%s ttl_seconds=%s",

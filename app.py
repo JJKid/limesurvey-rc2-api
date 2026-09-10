@@ -10,6 +10,7 @@ This file is intentionally small and declarative:
 All business logic lives in `routers/` and `services/`.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -22,15 +23,20 @@ from routers.responses import router as responses_router
 from routers.surveys import router as surveys_router
 from routers.survey_structures import router as survey_structures_router
 from infrastructure.redis_client import close_redis, initialize_redis
+from services.session_reaper import run_session_reaper
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Open shared clients once and close them when the process stops."""
     await initialize_redis()
+    stop_reaper = asyncio.Event()
+    reaper_task = asyncio.create_task(run_session_reaper(stop_reaper))
     try:
         yield
     finally:
+        stop_reaper.set()
+        await reaper_task
         await close_redis()
 
 

@@ -61,6 +61,24 @@ def test_citric_facade_keeps_the_existing_fastapi_operations(monkeypatch):
     assert api.client.closed is True
 
 
+def test_http_session_applies_connection_and_read_timeouts(monkeypatch):
+    captured = {}
+
+    def fake_request(_self, method, url, **kwargs):
+        captured.update(method=method, url=url, kwargs=kwargs)
+        return "response"
+
+    monkeypatch.setattr(requests.Session, "request", fake_request)
+    session = citric_session_adapter.TimeoutHttpSession()
+
+    assert session.request("POST", "https://ls.example/rpc") == "response"
+    assert captured["kwargs"]["timeout"] == citric_session_adapter.DEFAULT_REMOTE_TIMEOUT
+    assert captured["kwargs"]["allow_redirects"] is False
+
+    session.request("POST", "https://ls.example/rpc", timeout=(1, 2))
+    assert captured["kwargs"]["timeout"] == (1, 2)
+
+
 def test_citric_session_can_be_resumed_without_persisting_password(monkeypatch):
     captured = {}
 

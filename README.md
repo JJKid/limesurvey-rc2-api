@@ -249,6 +249,7 @@ valida la estructura normalizada.
 | `504` | `LS_SURVEY_LOAD_TIMEOUT` | La carga de encuesta excedió el tiempo. |
 | `504` | `LS_RESPONSE_EXPORT_TIMEOUT` | La exportación excedió el tiempo. |
 | `500` | `LS_UNKNOWN` | Error no clasificado. |
+| `500` | `INVALID_SURVEY_STRUCTURE` | La normalización produjo una encuesta o resultado de carga inválido. `detail.errors` conserva la ruta y la regla de cada fallo. |
 
 FastAPI coloca el error en `detail`. Cuando es estructurado, el código se
 encuentra en `detail.code`.
@@ -256,6 +257,13 @@ encuentra en `detail.code`.
 ## 8. Pruebas automatizadas
 
 Sin una instancia LimeSurvey:
+
+Instale también Node 18 o posterior (Docker ya incluye Node 22). La salida del
+normalizador se revisa con `schemas/validate-survey.cjs`, generado desde el
+mismo Zod de `survey-structure`, incluidas las reglas entre preguntas. Los
+archivos JSON Schema describen el contrato, pero no sustituyen esa validación.
+El proceso local tiene un límite de cinco segundos y 16 MiB por documento;
+si no puede ejecutarse, la solicitud falla sin devolver datos sin validar.
 
 ```bash
 python3 -m venv .venv
@@ -275,3 +283,32 @@ pytest -q -m integration
 ```
 
 No guarde estas credenciales en Git.
+
+## 9. Límites operativos y XML
+
+La configuración predeterminada permite cinco segundos para establecer una
+conexión con LimeSurvey y treinta para leer cada respuesta. La carga completa
+de una encuesta se limita a 120 segundos. Pueden ajustarse mediante:
+
+```dotenv
+LS_REMOTE_CONNECT_TIMEOUT_SECONDS=5
+LS_REMOTE_READ_TIMEOUT_SECONDS=30
+LS_SURVEY_LOAD_TIMEOUT_SECONDS=120
+```
+
+El ajuste automático de concurrencia es opcional y permanece desactivado por
+defecto. Si se habilita, se ejecuta en segundo plano sobre una muestra acotada
+y conserva el resultado durante 72 horas:
+
+```dotenv
+LS_OPTIMIZER_ENABLED=false
+LS_OPTIMIZER_TTL_SECONDS=259200
+LS_OPTIMIZER_MIN_SUCCESS_RATE=0.95
+LS_OPTIMIZER_MAX_SURVEYS=3
+LS_OPTIMIZER_MAX_GROUPS=10
+LS_OPTIMIZER_MAX_SAMPLE_QUESTIONS=10
+```
+
+Los archivos `.lss` se limitan a 20 MiB. El importador rechaza declaraciones
+`DOCTYPE` y `ENTITY`, usa un analizador protegido contra expansión de
+entidades y convierte etiquetas y ayudas HTML a texto plano.

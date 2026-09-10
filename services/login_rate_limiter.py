@@ -17,13 +17,13 @@ from repositories.cache_repository import cache_repository
 _memory_attempts: Dict[str, Deque[float]] = {}
 
 
-def enforce_login_rate_limit(client_ip: str, username: str) -> None:
+async def enforce_login_rate_limit(client_ip: str, username: str) -> None:
     limit = max(1, int(LS_LOGIN_RATE_LIMIT_PER_MIN))
     key = _build_key(client_ip, username)
 
     redis_key = f"ls:rate:login:{key}"
     try:
-        current = cache_repository.increment_with_ttl(redis_key, 60)
+        current = await cache_repository.increment_with_ttl(redis_key, 60)
         if current is not None:
             if current > limit:
                 raise HTTPException(

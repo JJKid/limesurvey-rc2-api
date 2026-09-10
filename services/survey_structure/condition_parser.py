@@ -15,7 +15,7 @@ class UnsupportedConditionError(ValueError):
 
 _COMPARISON = re.compile(
     r"^([A-Za-z0-9_]+(?:X[0-9]+X[0-9]+X[0-9]+)?(?:_[A-Za-z0-9]+)*)"
-    r"(?:\.NAOK)?\s*(==|!=|>=|<=|>|<)\s*(.+)$",
+    r"(?:\.(?:NAOK|code))?\s*(==|!=|>=|<=|>|<)\s*(.+)$",
     re.IGNORECASE,
 )
 
@@ -28,9 +28,18 @@ _OPERATORS = {
     "<=": "less-than-or-equal",
 }
 
-_SELECTION_COUNT = re.compile(
-    r"^(?:count\s*\(\s*that\.([A-Za-z0-9_]+)(?:\.NAOK)?\s*\)"
-    r"|countif\s*\(\s*['\"]Y['\"]\s*,\s*that\.([A-Za-z0-9_]+)(?:\.NAOK)?\s*\))"
+_MACRO_TARGET = r"(that|self)(?:\.([A-Za-z0-9_]+))?(?:\.(?:NAOK|code))?"
+_COUNT = re.compile(
+    rf"^count\s*\(\s*{_MACRO_TARGET}\s*\)\s*(==|!=|>=|<=|>|<)\s*([0-9]+)$",
+    re.IGNORECASE,
+)
+_COUNTIF = re.compile(
+    rf"^countif\s*\(\s*['\"]Y['\"]\s*,\s*{_MACRO_TARGET}\s*\)"
+    r"\s*(==|!=|>=|<=|>|<)\s*([0-9]+)$",
+    re.IGNORECASE,
+)
+_COUNTIFOP = re.compile(
+    rf"^countifop\s*\(\s*['\"]==['\"]\s*,\s*['\"]Y['\"]\s*,\s*{_MACRO_TARGET}\s*\)"
     r"\s*(==|!=|>=|<=|>|<)\s*([0-9]+)$",
     re.IGNORECASE,
 )
@@ -39,6 +48,7 @@ _SELECTION_COUNT = re.compile(
 def parse_limesurvey_condition(
     expression: str,
     references: Mapping[str, ConditionReference],
+    current_field_code: Optional[str] = None,
 ) -> Dict[str, Any] | None:
     """Return a neutral condition tree, or ``None`` for an unconditional expression."""
     normalized = _strip_outer_parentheses((expression or "").strip())
@@ -54,36 +64,36 @@ def parse_limesurvey_condition(
     if len(parts) > 1:
         return {
             "type": "any",
-            "conditions": [_required(parse_limesurvey_condition(part, references), part) for part in parts],
+            "conditions": [_required(parse_limesurvey_condition(part, references, current_field_code), part) for part in parts],
         }
 
     parts = _split_logical(normalized, "and")
     if len(parts) > 1:
         return {
             "type": "all",
-            "conditions": [_required(parse_limesurvey_condition(part, references), part) for part in parts],
+            "conditions": [_required(parse_limesurvey_condition(part, references, current_field_code), part) for part in parts],
         }
 
     if re.match(r"^not\b", normalized, re.IGNORECASE):
         nested = re.sub(r"^not\b", "", normalized, count=1, flags=re.IGNORECASE).strip()
         return {
             "type": "not",
-            "condition": _required(parse_limesurvey_condition(nested, references), nested),
+            "condition": _required(parse_limesurvey_condition(nested, references, current_field_code), nested),
         }
     if normalized.startswith("!"):
         nested = normalized[1:].strip()
         return {
             "type": "not",
-            "condition": _required(parse_limesurvey_condition(nested, references), nested),
+            "condition": _required(parse_limesurvey_condition(nested, references, current_field_code), nested),
         }
 
-    selection_count = _SELECTION_COUNT.match(normalized)
+    selection_count = next((pattern.match(normalized) for pattern in (_COUNT, _COUNTIF, _COUNTIFOP) if pattern.match(normalized)), None)
     if selection_count:
-        first_reference, second_reference, operator, value = selection_count.groups()
+        macro, referenced_field, operator, value = selection_count.groups()
         return {
             "type": "selection-count",
             "reference": _reference_payload(
-                _resolve_reference(first_reference or second_reference, references)
+                _resolve_macro_reference(macro, referenced_field, references, current_field_code)
             ),
             "operator": _OPERATORS[operator],
             "value": int(value),
@@ -106,7 +116,7 @@ def parse_limesurvey_condition(
             "value": _literal(raw_value),
         }
 
-    bare_reference = re.match(r"^([A-Za-z0-9_]+(?:X[0-9]+X[0-9]+X[0-9]+)?(?:_[A-Za-z0-9]+)*)(?:\.NAOK)?$", normalized)
+    bare_reference = re.match(r"^([A-Za-z0-9_]+(?:X[0-9]+X[0-9]+X[0-9]+)?(?:_[A-Za-z0-9]+)*)(?:\.(?:NAOK|code))?$", normalized)
     if bare_reference:
         return {
             "type": "answered",
@@ -172,6 +182,27 @@ def _resolve_reference(
         f'LimeSurvey condition reference "{token}" could not be matched to any '
         "imported question or subquestion. The condition was omitted."
     )
+
+
+def _resolve_macro_reference(
+    macro: str,
+    referenced_field: Optional[str],
+    references: Mapping[str, ConditionReference],
+    current_field_code: Optional[str],
+) -> ConditionReference:
+    if macro.lower() == "that":
+        if not referenced_field:
+            raise UnsupportedConditionError('The "that" macro requires a question code.')
+        return _resolve_reference(referenced_field, references)
+    if not current_field_code:
+        raise UnsupportedConditionError(
+            'The "self" macro requires the current question context, which is not available here.'
+        )
+    if referenced_field and referenced_field.lower() not in {"naok", "code"}:
+        raise UnsupportedConditionError(
+            f'Unsupported LimeSurvey self sub-selector: {referenced_field}'
+        )
+    return _resolve_reference(current_field_code, references)
 
 
 def _reference_payload(reference: ConditionReference) -> Dict[str, str]:

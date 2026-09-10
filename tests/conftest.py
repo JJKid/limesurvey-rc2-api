@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import sys
 
 import pytest
@@ -20,10 +21,26 @@ from core.config import (
     JWT_TOKEN_TYPE,
 )
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def client():
-    with TestClient(app) as c:
-        yield c
+    # HTTP unit tests mock their collaborators. Do not open the developer's Redis
+    # or start the real session reaper; asyncio.run tests also use separate loops.
+    # Startup/shutdown and real services require explicit integration tests.
+    client = TestClient(app)
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@pytest.fixture
+def integration_client():
+    """Start real Redis and lifecycle hooks only for explicitly configured LS tests."""
+    required = ("LS_INTEGRATION_URL", "LS_INTEGRATION_USERNAME", "LS_INTEGRATION_PASSWORD", "LS_INTEGRATION_SID")
+    if any(not os.getenv(name) for name in required):
+        pytest.skip("Configure LS_INTEGRATION_URL, USERNAME, PASSWORD and SID for real integration.")
+    with TestClient(app) as client:
+        yield client
 
 @pytest.fixture
 def auth_headers():

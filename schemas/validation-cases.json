@@ -1,0 +1,1573 @@
+[
+  {
+    "name": "minimal",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty editable draft",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": []
+    }
+  },
+  {
+    "name": "typed encoding",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "responseEncoding": {
+            "selectedValue": "Y",
+            "unselectedValue": "N"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate code",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        },
+        {
+          "id": "q2",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate id",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        },
+        {
+          "id": "q1",
+          "code": "Q02",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown group",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "groupId": "missing"
+        }
+      ]
+    }
+  },
+  {
+    "name": "top-level parent",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "parentId": "missing"
+        }
+      ]
+    }
+  },
+  {
+    "name": "nested duplicate",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        },
+        {
+          "id": "c1",
+          "code": "C01",
+          "type": "custom",
+          "label": "Bloque",
+          "childrenFields": [
+            {
+              "id": "q2",
+              "code": "Q01",
+              "type": "short-text",
+              "label": "Pregunta 1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "nested wrong parent",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "c1",
+          "code": "C01",
+          "type": "custom",
+          "label": "Bloque",
+          "childrenFields": [
+            {
+              "id": "q1",
+              "code": "Q01",
+              "type": "short-text",
+              "label": "Pregunta 1",
+              "parentId": "c2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid nested parent",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "c1",
+          "code": "C01",
+          "type": "custom",
+          "label": "Bloque",
+          "childrenFields": [
+            {
+              "id": "q1",
+              "code": "Q01",
+              "type": "short-text",
+              "label": "Pregunta 1",
+              "parentId": "c1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate groups",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ],
+      "groups": [
+        {
+          "id": "g1",
+          "order": 0
+        },
+        {
+          "id": "g1",
+          "order": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing field reference",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "visibility": {
+            "condition": {
+              "type": "answered",
+              "reference": {
+                "fieldCode": "MISSING"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid field reference",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "visibility": {
+            "condition": {
+              "type": "answered",
+              "reference": {
+                "fieldCode": "Q01"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing response item",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "visibility": {
+            "condition": {
+              "type": "answered",
+              "reference": {
+                "fieldCode": "Q01",
+                "responseItemCode": "A9"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty condition",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "visibility": {
+            "condition": {
+              "type": "all",
+              "conditions": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "widget mismatch",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "rendering": {
+            "widget": "matrix-grid"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown property",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "renderign": {}
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing variant collection",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unexpected options",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty code",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate options",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "selection limits on text",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "validation": {
+            "minSelections": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "selection limits on single",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "single-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "validation": {
+            "maxSelections": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "numeric rules on text",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "validation": {
+            "min": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "text rules on number",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "number",
+          "label": "Pregunta 1",
+          "validation": {
+            "minLength": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "reversed bounds",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "number",
+          "label": "Pregunta 1",
+          "validation": {
+            "min": 10,
+            "max": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "same encoding",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "responseEncoding": {
+            "selectedValue": "Y",
+            "unselectedValue": "Y"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "mixed encoding types",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "responseEncoding": {
+            "selectedValue": "Y",
+            "unselectedValue": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "half encoding labels",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "responseEncoding": {
+            "selectedValue": true,
+            "unselectedValue": false,
+            "selectedLabel": "Sí"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "encoding on text",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "responseEncoding": {
+            "selectedValue": true,
+            "unselectedValue": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown default option",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "defaultValue": [
+            "A9"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "repeated default option",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "defaultValue": [
+            "A1",
+            "A1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "incomplete ranking default",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "ranking",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "defaultValue": [
+            "A1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown matrix row default",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "R9": "A1"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown matrix column default",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "R1": "A9"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid matrix default",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "R1": "A1"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown input default",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "multiple-input",
+          "label": "Pregunta 1",
+          "subquestions": [
+            {
+              "code": "S1",
+              "label": "Subpregunta"
+            }
+          ],
+          "defaultValue": {
+            "S9": "Texto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "invalid calendar default",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "date",
+          "label": "Pregunta 1",
+          "dateValueType": "date",
+          "defaultValue": "2026-02-31"
+        }
+      ]
+    }
+  },
+  {
+    "name": "leap calendar default",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "date",
+          "label": "Pregunta 1",
+          "dateValueType": "date",
+          "defaultValue": "2024-02-29"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Other on gender",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "gender",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "other": {
+            "code": "OTHER",
+            "label": "Otro",
+            "textResponseKey": "Q01_OTHER"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "Other comment on single",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "single-choice",
+          "label": "Pregunta 1",
+          "options": [
+            {
+              "code": "A1",
+              "label": "Opción 1"
+            },
+            {
+              "code": "A2",
+              "label": "Opción 2"
+            }
+          ],
+          "other": {
+            "code": "OTHER",
+            "label": "Otro",
+            "textResponseKey": "Q01_OTHER",
+            "commentResponseKey": "Q01_COMMENT"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "wrong extension level",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "source": {
+            "platform": "limesurvey",
+            "extensions": [
+              {
+                "type": "limesurvey-survey",
+                "version": "1.0.0"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown extension",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "source": {
+            "platform": "limesurvey",
+            "extensions": [
+              {
+                "type": "unknown",
+                "version": "1.0.0"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid load result",
+    "valid": true,
+    "contract": "SurveyLoadResult",
+    "value": {
+      "survey": {
+        "contractVersion": "2.0.0",
+        "id": "synthetic",
+        "fields": [
+          {
+            "id": "q1",
+            "code": "Q01",
+            "type": "short-text",
+            "label": "Pregunta 1"
+          }
+        ]
+      },
+      "issues": []
+    }
+  },
+  {
+    "name": "invalid nested survey",
+    "valid": false,
+    "contract": "SurveyLoadResult",
+    "value": {
+      "survey": {
+        "contractVersion": "2.0.0",
+        "id": "synthetic",
+        "fields": [
+          {
+            "id": "q1",
+            "code": "Q01",
+            "type": "short-text",
+            "label": "Pregunta 1"
+          },
+          {
+            "id": "q1",
+            "code": "Q01",
+            "type": "short-text",
+            "label": "Pregunta 1"
+          }
+        ]
+      },
+      "issues": []
+    }
+  },
+  {
+    "name": "wrong issue details",
+    "valid": false,
+    "contract": "SurveyLoadResult",
+    "value": {
+      "survey": {
+        "contractVersion": "2.0.0",
+        "id": "synthetic",
+        "fields": [
+          {
+            "id": "q1",
+            "code": "Q01",
+            "type": "short-text",
+            "label": "Pregunta 1"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "level": "warning",
+          "code": "UNSUPPORTED_TYPE",
+          "message": "Tipo no soportado",
+          "details": {
+            "sourceExpression": "x"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid numeric matrix",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "number",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "validation": {
+            "min": 0,
+            "max": 10
+          },
+          "defaultValue": {
+            "R1": {
+              "A1": 4
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "numeric cell outside limits",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "number",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "validation": {
+            "min": 0,
+            "max": 10
+          },
+          "defaultValue": {
+            "R1": {
+              "A1": 12
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "numeric cell is text",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "number",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "validation": {
+            "min": 0,
+            "max": 10
+          },
+          "defaultValue": {
+            "R1": {
+              "A1": "4"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "valid dual matrix",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "dual-single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "0",
+                "label": "Escala 1",
+                "options": [
+                  {
+                    "code": "A1",
+                    "label": "Opción de escala 1"
+                  }
+                ]
+              },
+              {
+                "code": "1",
+                "label": "Escala 2",
+                "options": [
+                  {
+                    "code": "B1",
+                    "label": "Opción de escala 2"
+                  }
+                ]
+              }
+            ]
+          },
+          "defaultValue": {
+            "R1": {
+              "0": "A1",
+              "1": "B1"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "dual option in wrong scale",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "dual-single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "0",
+                "label": "Escala 1",
+                "options": [
+                  {
+                    "code": "A1",
+                    "label": "Opción de escala 1"
+                  }
+                ]
+              },
+              {
+                "code": "1",
+                "label": "Escala 2",
+                "options": [
+                  {
+                    "code": "B1",
+                    "label": "Opción de escala 2"
+                  }
+                ]
+              }
+            ]
+          },
+          "defaultValue": {
+            "R1": {
+              "1": "A1"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "dual missing scale",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "dual-single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "0",
+                "label": "Escala 1",
+                "options": [
+                  {
+                    "code": "A1",
+                    "label": "Opción de escala 1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "regional language",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ],
+      "language": "es-MX",
+      "availableLanguages": [
+        "es-MX"
+      ]
+    }
+  },
+  {
+    "name": "private-use language",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ],
+      "language": "x-survey"
+    }
+  },
+  {
+    "name": "invalid language syntax",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ],
+      "language": "es_MX"
+    }
+  },
+  {
+    "name": "missing response alias target",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "dual-single",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "0",
+                "label": "Escala 1",
+                "options": [
+                  {
+                    "code": "A1",
+                    "label": "Opción de escala 1"
+                  }
+                ]
+              },
+              {
+                "code": "1",
+                "label": "Escala 2",
+                "options": [
+                  {
+                    "code": "B1",
+                    "label": "Opción de escala 2"
+                  }
+                ]
+              }
+            ]
+          },
+          "source": {
+            "platform": "limesurvey",
+            "responseAliases": [
+              {
+                "responseItemCode": "MISSING_0",
+                "aliases": [
+                  "Q_R#0"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+]

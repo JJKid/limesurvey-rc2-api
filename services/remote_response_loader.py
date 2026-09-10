@@ -4,6 +4,8 @@ import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
+from pydantic import ValidationError
+from schemas import SurveyResponseDataset
 
 from core.config import LS_RESPONSES_MAX_BYTES, LS_RESPONSES_TIMEOUT_SECONDS
 from services.remote_call_executor import run_remote_call
@@ -73,4 +75,8 @@ async def load_responses(
         raise InvalidResponseExportError(
             'LimeSurvey JSON export must contain a "responses" array of objects.'
         )
+    try:
+        SurveyResponseDataset(surveyId=str(sid), responses=responses)
+    except ValidationError as exc:
+        raise InvalidResponseExportError("LimeSurvey returned values that are not valid JSON response data.") from exc
     return RemoteResponseExport(content=content, responses=responses)

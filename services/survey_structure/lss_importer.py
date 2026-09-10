@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -82,11 +83,17 @@ def _parse_document(content: bytes) -> ET.Element:
     """Reject unsafe or unsupported XML and return the document root."""
     if len(content) > MAX_LSS_BYTES:
         raise SurveyStructureSourceError("LSS file exceeds the 20 MiB limit.")
-    prefix = content[:4096].decode("utf-8", errors="ignore").upper()
-    if "<!DOCTYPE" in prefix or "<!ENTITY" in prefix:
-        raise SurveyStructureSourceError("LSS files with DTD or entity declarations are not accepted.")
+    declarations = content.upper()
+    if b"<!DOCTYPE" in declarations or b"<!ENTITY" in declarations:
+        raise SurveyStructureSourceError(
+            "LSS files with DTD, external entities, or entity expansion are not accepted."
+        )
     try:
         root = ET.fromstring(content)
+    except DefusedXmlException as exc:
+        raise SurveyStructureSourceError(
+            "LSS files with DTD, external entities, or entity expansion are not accepted."
+        ) from exc
     except ET.ParseError as exc:
         raise SurveyStructureSourceError(f"Invalid LSS XML: {exc}.") from exc
     if root.tag != "document" or _element_text(root.find("LimeSurveyDocType")) != "Survey":
@@ -151,6 +158,18 @@ def _merge_questions(
             },
             "attributes": attributes_by_qid.get(qid),
         }
+        if _text(row.get("type")) == "1":
+            # Preserve duplicate answer codes belonging to different scales.
+            merged["result"]["answeroptions"] = {
+                str(scale): {
+                    _text(answer.get("code")): {
+                        "answer": answer.get("answer") or answer.get("code"),
+                        "order": answer.get("sortorder"),
+                    }
+                    for answer in answers_by_qid.get(qid, [])
+                    if _text(answer.get("scale_id") or "0") == str(scale)
+                } for scale in (0, 1)
+            }
         if conditions_by_qid.get(qid):
             merged["conditions"] = conditions_by_qid[qid]
         questions.append(merged)

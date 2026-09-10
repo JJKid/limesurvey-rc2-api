@@ -53,8 +53,7 @@ async def account_concurrency_slot(account_id: str) -> AsyncIterator[None]:
     deadline = time.monotonic() + LS_ACCOUNT_CONCURRENCY_WAIT_SECONDS
     while True:
         now = time.time()
-        acquired = await asyncio.to_thread(
-            client.eval,
+        acquired = await client.eval(
             _ACQUIRE_SCRIPT,
             1,
             key,
@@ -72,4 +71,4 @@ async def account_concurrency_slot(account_id: str) -> AsyncIterator[None]:
     try:
         yield
     finally:
-        await asyncio.to_thread(client.zrem, key, token)
+        await client.zrem(key, token)

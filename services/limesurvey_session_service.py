@@ -1,7 +1,9 @@
 """Create, authorize, resume, and remove LimeSurvey sessions."""
 
 from fastapi import HTTPException
+import time
 
+from core.config import LS_SESSION_TTL_SECONDS
 from core.security import AuthenticatedIdentity
 from repositories.session_repository import (
     LimeSurveySessionRecord,
@@ -10,7 +12,7 @@ from repositories.session_repository import (
 from services.limesurvey_client import LimeSurveyClient
 
 
-def store_limesurvey_session(
+async def store_limesurvey_session(
     local_session_id: str,
     *,
     url: str,
@@ -19,23 +21,27 @@ def store_limesurvey_session(
     owner: AuthenticatedIdentity,
 ) -> None:
     """Persist a remote session under a local UUID bound to its caller."""
-    session_repository.save(local_session_id, LimeSurveySessionRecord(
+    await session_repository.save(local_session_id, LimeSurveySessionRecord(
         url=url,
         username=username,
         remote_session_key=remote_session_key,
         owner_subject=owner.subject,
         owner_issuer=owner.issuer,
+        expires_at=time.time() + LS_SESSION_TTL_SECONDS,
     ))
 
 
-def resume_limesurvey_client(
+async def resume_limesurvey_client(
     local_session_id: str,
     owner: AuthenticatedIdentity,
 ) -> LimeSurveyClient:
     """Authorize a local UUID and reconstruct its Citric-backed client."""
-    record = session_repository.find(local_session_id)
+    record = await session_repository.find(local_session_id)
     if record is None:
-        raise HTTPException(status_code=401, detail="LimeSurvey session was not found or has expired")
+        raise HTTPException(status_code=401, detail={
+            "code": "LS_SESSION_EXPIRED",
+            "message": "LimeSurvey session was not found or has expired. Open a new session.",
+        })
     if (
         record.owner_subject != owner.subject
         or record.owner_issuer != owner.issuer
@@ -51,6 +57,6 @@ def resume_limesurvey_client(
     )
 
 
-def delete_limesurvey_session(local_session_id: str) -> None:
+async def delete_limesurvey_session(local_session_id: str) -> None:
     """Remove one local-to-remote session association."""
-    session_repository.delete(local_session_id)
+    await session_repository.delete(local_session_id)

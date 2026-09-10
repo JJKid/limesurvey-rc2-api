@@ -1,4 +1,8 @@
-FROM python:3.12-slim
+FROM node:22-bookworm-slim AS contract-runtime
+FROM python:3.12-slim-bookworm
+
+# Runs the bundled Zod validator locally; no npm install or second service.
+COPY --from=contract-runtime /usr/local/bin/node /usr/local/bin/node
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1

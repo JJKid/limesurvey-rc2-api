@@ -6,6 +6,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 
 from core.security import AuthenticatedIdentity, verify_token
+from schemas import SurveyResponseDataset
 from services.error_mapper import raise_limesurvey_error
 from services.remote_response_loader import (
     InvalidResponseExportError,
@@ -48,8 +49,8 @@ async def get_survey_responses(
             },
         )
     normalized_fields = _normalize_fields(fields)
-    enforce_response_export_rate_limit(session_key, sid)
-    api = resume_limesurvey_client(session_key, auth)
+    await enforce_response_export_rate_limit(session_key, sid)
+    api = await resume_limesurvey_client(session_key, auth)
     file_format = "csv" if "text/csv" in accept.lower() else "json"
     try:
         export = await load_responses(
@@ -99,7 +100,7 @@ async def get_survey_responses(
     except HTTPException:
         raise
     except Exception as exc:
-        raise_limesurvey_error(session_key, exc, f"exporting responses for sid {sid}")
+        await raise_limesurvey_error(session_key, exc, f"exporting responses for sid {sid}")
 
 
 def _normalize_fields(fields: Optional[List[str]]) -> Optional[List[str]]:
@@ -124,8 +125,13 @@ def _normalize_fields(fields: Optional[List[str]]) -> Optional[List[str]]:
 def _json_response(sid: int, language: Optional[str], responses: List[dict]) -> bytes:
     import json
 
+    dataset = SurveyResponseDataset(
+        surveyId=str(sid),
+        language=language,
+        responses=responses,
+    )
     return json.dumps(
-        {"surveyId": str(sid), "language": language, "responses": responses},
+        dataset.model_dump(exclude_none=True),
         ensure_ascii=False,
         separators=(",", ":"),
     ).encode("utf-8")

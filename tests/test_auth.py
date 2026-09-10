@@ -10,28 +10,34 @@ def test_login_fail(client, auth_headers):
     assert r.status_code == 400
     assert r.json()["detail"]["code"] == "LIMESURVEY_URL_NOT_ALLOWED"
 
-# Este test asume LS real. Marcarlo con -m integration
-def test_login_ok_and_logout_flow(client, auth_headers):
-    # Replace these values when a real local LimeSurvey instance is available.
-    payload = {
-        "url": "http://localhost:8080/limesurvey/index.php/admin/remotecontrol",
-        "username":"admin", "password":"passwd"
-    }
-    r = client.post("/login-limesurvey", json=payload, headers=auth_headers)
-    if r.status_code != 200:
-        return  # saltar si no hay LS local
-    session_key = r.json()["session_key"]
+def test_login_and_logout_keep_remote_key_private(client, auth_headers, monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, Mock
+    import routers.auth as auth
 
-    # surveys (protegido con JWT)
-    r2 = client.get(
-        "/surveys",
-        headers={**auth_headers, "X-LimeSurvey-Session": session_key},
-    )
-    assert r2.status_code in (200, 401, 500, 404, 503)  # depende de LS/red/session
+    api = SimpleNamespace(session_key="synthetic-remote-key", open=Mock(), close=Mock())
+    saved = AsyncMock()
+    removed = AsyncMock()
+    monkeypatch.setattr(auth, "validate_limesurvey_url", lambda url: url)
+    monkeypatch.setattr(auth, "enforce_login_rate_limit", AsyncMock())
+    monkeypatch.setattr(auth, "LimeSurveyClient", lambda **_kwargs: api)
+    monkeypatch.setattr(auth, "store_limesurvey_session", saved)
+    monkeypatch.setattr(auth, "resume_limesurvey_client", AsyncMock(return_value=api))
+    monkeypatch.setattr(auth, "delete_limesurvey_session", removed)
+    monkeypatch.setattr(auth, "LS_OPTIMIZER_ENABLED", False)
 
-    # logout
-    r3 = client.get(
-        "/logout-limesurvey",
-        headers={**auth_headers, "X-LimeSurvey-Session": session_key},
-    )
-    assert r3.status_code in (200, 404)
+    response = client.post("/login-limesurvey", json={
+        "url": "https://ls.example/rpc", "username": "test-reader", "password": "synthetic-password",
+    }, headers=auth_headers)
+    assert response.status_code == 200
+    local_key = response.json()["session_key"]
+    assert local_key != api.session_key
+    assert api.session_key not in response.text
+    assert saved.call_args.args == (local_key,)
+    assert saved.call_args.kwargs["owner"].subject == "pytest-user"
+    assert saved.call_args.kwargs["remote_session_key"] == api.session_key
+
+    response = client.get("/logout-limesurvey", headers={**auth_headers, "X-LimeSurvey-Session": local_key})
+    assert response.status_code == 200
+    api.close.assert_called_once()
+    removed.assert_awaited_once_with(local_key)

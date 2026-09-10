@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import time
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 from services.limesurvey_client import LimeSurveyClient
 from services.remote_call_executor import run_remote_call
+from core.config import (
+    DEFAULT_OPTIMAL_PARAMS,
+    LS_OPTIMIZER_MAX_GROUPS,
+    LS_OPTIMIZER_MAX_SAMPLE_QUESTIONS,
+    LS_OPTIMIZER_MAX_SURVEYS,
+    LS_OPTIMIZER_MIN_SUCCESS_RATE,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -21,10 +27,10 @@ PropertyFetcher = Callable[..., Awaitable[Any]]
 class HybridOptimizer:
     """Combine host limits with live LimeSurvey measurements.
 
-    The optimizer uses the largest available question group as a bounded test
-    case. It compares a small set of semaphore and retry values and returns the
-    fastest successful configuration. It never changes public API behavior;
-    callers only use its result to tune internal concurrent fetches.
+    The optimizer inspects only the configured survey, group, and question
+    limits. Inside that bounded sample it uses the largest group, compares a
+    small set of concurrency and retry values, and accepts only configurations
+    that meet the configured minimum success rate.
     """
 
     def __init__(
@@ -43,7 +49,7 @@ class HybridOptimizer:
         }
 
     async def analyze_survey_metrics(self) -> Dict[str, Any]:
-        """Find the largest group and collect basic account-wide metrics.
+        """Find the largest group inside a bounded account sample.
 
         Citric is synchronous, so each remote call runs in a worker thread and
         does not block FastAPI's event loop.
@@ -57,10 +63,14 @@ class HybridOptimizer:
             "question_types": {},
         }
         surveys = await run_remote_call(self.api, self.api.survey.list_surveys)
-        for survey in surveys:
+        visited_groups = 0
+        for survey in surveys[:max(1, LS_OPTIMIZER_MAX_SURVEYS)]:
             sid = int(survey["sid"])
             groups = await run_remote_call(self.api, self.api.survey.list_groups, sid)
             for group in groups:
+                if visited_groups >= max(1, LS_OPTIMIZER_MAX_GROUPS):
+                    return metrics
+                visited_groups += 1
                 gid = int(group["gid"])
                 questions = await run_remote_call(
                     self.api,
@@ -81,12 +91,12 @@ class HybridOptimizer:
                     counts[question_type] = counts.get(question_type, 0) + 1
         return metrics
 
-    async def _get_worst_case_avg_response_time(
+    async def _measure_sample_response_time(
         self,
         survey_id: int,
         group_id: int,
     ) -> Optional[float]:
-        """Measure average seconds per question for the largest group."""
+        """Measure average seconds per question for the selected sample group."""
         try:
             semaphore = asyncio.Semaphore(5)
             fetch_started = time.perf_counter()
@@ -118,16 +128,17 @@ class HybridOptimizer:
                     )
                 return None
 
-            measurements = await asyncio.gather(*(measure(question) for question in questions))
+            sample = questions[:max(1, LS_OPTIMIZER_MAX_SAMPLE_QUESTIONS)]
+            measurements = await asyncio.gather(*(measure(question) for question in sample))
             durations = [duration for duration in measurements if duration is not None]
             if not durations:
                 logger.warning("Benchmark produced no valid response times")
                 return None
-            average = (fetch_duration + sum(durations)) / len(questions)
+            average = (fetch_duration + sum(durations)) / len(sample)
             logger.info(
                 "Benchmark group=%s questions=%s average_ms=%.2f",
                 group_id,
-                len(questions),
+                len(sample),
                 average * 1000,
             )
             return average
@@ -187,13 +198,14 @@ class HybridOptimizer:
                     logger.warning("Question %s failed: %s", question["qid"], exc)
                 return None
 
-            measurements = await asyncio.gather(*(measure(question) for question in questions))
+            sample = questions[:max(1, LS_OPTIMIZER_MAX_SAMPLE_QUESTIONS)]
+            measurements = await asyncio.gather(*(measure(question) for question in sample))
             durations = [duration for duration in measurements if duration is not None]
             if not durations:
                 return None
             successful = len(durations)
-            failed = len(questions) - successful
-            average = (fetch_duration + sum(durations)) / len(questions)
+            failed = len(sample) - successful
+            average = (fetch_duration + sum(durations)) / len(sample)
             logger.info(
                 "Optimizer sample semaphore=%s max_attempts=%s successful=%s failed=%s average_ms=%.2f",
                 semaphore,
@@ -203,7 +215,7 @@ class HybridOptimizer:
                 average * 1000,
             )
             return {
-                "success_rate": successful / len(questions),
+                "success_rate": successful / len(sample),
                 "avg_response_time": average,
                 "error_count": float(failed),
             }
@@ -225,12 +237,7 @@ class HybridOptimizer:
                 logger.warning("No LimeSurvey groups are available for optimization")
                 return self._get_default_parameters()
 
-            cpu_count = self._get_cpu_count()
-            min_semaphore = max(1, cpu_count // 2)
-            max_semaphore = min(cpu_count * 2, 10)
-            max_attempts_range = range(1, 4)
-
-            baseline = await self._get_worst_case_avg_response_time(
+            baseline = await self._measure_sample_response_time(
                 metrics["max_survey_id"],
                 metrics["max_group_id"],
             )
@@ -243,8 +250,8 @@ class HybridOptimizer:
             }
 
             best: Optional[Dict[str, Any]] = None
-            for semaphore in range(min_semaphore, max_semaphore + 1, 2):
-                for max_attempts in max_attempts_range:
+            for semaphore in (2, 4, 6):
+                for max_attempts in (1, 2):
                     result = await self._evaluate_parameter_combination(
                         semaphore,
                         max_attempts,
@@ -253,7 +260,9 @@ class HybridOptimizer:
                     )
                     if not result:
                         continue
-                    score = self._calculate_time_score(result["avg_response_time"])
+                    if result["success_rate"] < LS_OPTIMIZER_MIN_SUCCESS_RATE:
+                        continue
+                    score = self._calculate_time_score(result["avg_response_time"]) * result["success_rate"]
                     if best is None or score > best["score"]:
                         best = {
                             "semaphore": semaphore,
@@ -281,14 +290,9 @@ class HybridOptimizer:
     def _get_default_parameters(self) -> Dict[str, Any]:
         """Return conservative parameters when live measurement is unavailable."""
         defaults = {
-            "semaphore": min(self._get_cpu_count(), 5),
-            "maxAttempts": 2,
+            "semaphore": DEFAULT_OPTIMAL_PARAMS["semaphore"],
+            "maxAttempts": DEFAULT_OPTIMAL_PARAMS["maxAttempts"],
             "score": 0.0,
         }
         logger.info("Using default optimizer parameters: %s", defaults)
         return defaults
-
-    @staticmethod
-    def _get_cpu_count() -> int:
-        """Return the number of CPUs visible to the current process."""
-        return os.cpu_count() or 1

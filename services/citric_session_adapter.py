@@ -7,16 +7,19 @@ import json
 import requests
 from citric import Client
 from citric.session import Session
+from core.config import LS_REMOTE_CONNECT_TIMEOUT_SECONDS, LS_REMOTE_READ_TIMEOUT_SECONDS
 
-
-DEFAULT_REMOTE_TIMEOUT_SECONDS = 30.0
+DEFAULT_REMOTE_TIMEOUT = (
+    LS_REMOTE_CONNECT_TIMEOUT_SECONDS,
+    LS_REMOTE_READ_TIMEOUT_SECONDS,
+)
 
 
 class TimeoutHttpSession(requests.Session):
     """Apply a default timeout and disable redirects for every RC2 request."""
 
     def request(self, method, url, **kwargs):
-        kwargs.setdefault("timeout", DEFAULT_REMOTE_TIMEOUT_SECONDS)
+        kwargs.setdefault("timeout", DEFAULT_REMOTE_TIMEOUT)
         kwargs.setdefault("allow_redirects", False)
         return super().request(method, url, **kwargs)
 

@@ -52,7 +52,7 @@ def is_limesurvey_remote_unreachable(error: Exception) -> bool:
     return any(pattern in error_text for pattern in unreachable_patterns)
 
 
-def raise_limesurvey_error(session_key: str, error: Exception, context: str) -> None:
+async def raise_limesurvey_error(session_key: str, error: Exception, context: str) -> None:
     """
     Raise a normalized HTTPException with one of these codes:
       - LS_SESSION_EXPIRED (401)
@@ -75,7 +75,7 @@ def raise_limesurvey_error(session_key: str, error: Exception, context: str) -> 
         token in error_code for token in ("invalid_session", "session_expired", "invalidsession")
     )
     if structured_session_error or any(re.search(pattern, normalized_error) for pattern in session_expired_patterns):
-        delete_limesurvey_session(session_key)
+        await delete_limesurvey_session(session_key)
         raise HTTPException(
             status_code=401,
             detail={

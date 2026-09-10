@@ -13,7 +13,7 @@ from typing import Dict, Optional
 from core.account_identity import account_cache_id
 from services.limesurvey_client import LimeSurveyClient
 
-from core.config import DEFAULT_OPTIMAL_PARAMS
+from core.config import DEFAULT_OPTIMAL_PARAMS, LS_OPTIMIZER_ENABLED, LS_OPTIMIZER_TTL_SECONDS
 from services.hybrid_optimizer import HybridOptimizer
 from services.limesurvey_fetchers import make_fetchers
 from repositories.cache_repository import cache_repository
@@ -43,14 +43,14 @@ def generate_optimizer_redis_keys(account_cache_id: str) -> Dict[str, str]:
     }
 
 
-def get_cached_optimal_params(api: LimeSurveyClient) -> Optional[Dict[str, int]]:
+async def get_cached_optimal_params(api: LimeSurveyClient) -> Optional[Dict[str, int]]:
     """
     Read cached optimizer params from Redis, if available.
     """
     account_id = generate_account_cache_id(api)
     keys = generate_optimizer_redis_keys(account_id)
-    semaphore_value = cache_repository.get_text(keys["semaphore"])
-    max_attempts_value = cache_repository.get_text(keys["maxAttempts"])
+    semaphore_value = await cache_repository.get_text(keys["semaphore"])
+    max_attempts_value = await cache_repository.get_text(keys["maxAttempts"])
 
     if semaphore_value and max_attempts_value:
         try:
@@ -70,11 +70,11 @@ async def optimize_user_account_params(api: LimeSurveyClient) -> None:
     account_id = generate_account_cache_id(api)
     keys = generate_optimizer_redis_keys(account_id)
 
-    if get_cached_optimal_params(api):
+    if not LS_OPTIMIZER_ENABLED or await get_cached_optimal_params(api):
         return
 
     # Avoid parallel optimizer runs for same account.
-    got_lock = cache_repository.acquire_lock(keys["lock"], 900)
+    got_lock = await cache_repository.acquire_lock(keys["lock"], 900)
     if not got_lock:
         return
 
@@ -97,9 +97,9 @@ async def optimize_user_account_params(api: LimeSurveyClient) -> None:
         score_value = float(optimal_params.get("score", 0.0))
         timestamp_value = int(time.time())
 
-        cache_repository.set_text(keys["semaphore"], semaphore_value)
-        cache_repository.set_text(keys["maxAttempts"], max_attempts_value)
-        cache_repository.set_text(keys["score"], score_value)
-        cache_repository.set_text(keys["timestamp"], timestamp_value)
+        await cache_repository.set_text(keys["semaphore"], semaphore_value, LS_OPTIMIZER_TTL_SECONDS)
+        await cache_repository.set_text(keys["maxAttempts"], max_attempts_value, LS_OPTIMIZER_TTL_SECONDS)
+        await cache_repository.set_text(keys["score"], score_value, LS_OPTIMIZER_TTL_SECONDS)
+        await cache_repository.set_text(keys["timestamp"], timestamp_value, LS_OPTIMIZER_TTL_SECONDS)
     finally:
-        cache_repository.delete(keys["lock"])
+        await cache_repository.delete(keys["lock"])

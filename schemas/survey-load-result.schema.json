@@ -22,13 +22,13 @@
               "type": "string"
             },
             "language": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "availableLanguages": {
               "type": "array",
               "items": {
-                "type": "string",
-                "minLength": 1
+                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/language"
               }
             },
             "groups": {
@@ -485,6 +485,31 @@
                           "nativeType": {
                             "type": "string"
                           },
+                          "responseAliases": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "responseItemCode": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "aliases": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": [
+                                "responseItemCode",
+                                "aliases"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
                           "extensions": {
                             "type": "array",
                             "items": {
@@ -522,6 +547,15 @@
                                           "type": "string"
                                         },
                                         "subquestionValidationExpression": {
+                                          "type": "string"
+                                        },
+                                        "minimumCellValueExpression": {
+                                          "type": "string"
+                                        },
+                                        "maximumCellValueExpression": {
+                                          "type": "string"
+                                        },
+                                        "cellStepExpression": {
                                           "type": "string"
                                         }
                                       },
@@ -568,7 +602,7 @@
                         }
                       },
                       "defaultValue": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/value/anyOf/0"
+                        "type": "string"
                       },
                       "other": {
                         "type": "object",
@@ -666,7 +700,7 @@
                       "defaultValue": {
                         "type": "array",
                         "items": {
-                          "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/value/anyOf/0"
+                          "type": "string"
                         }
                       },
                       "other": {
@@ -758,7 +792,7 @@
                       "defaultValue": {
                         "type": "object",
                         "additionalProperties": {
-                          "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/value/anyOf/0"
+                          "type": "string"
                         }
                       }
                     },
@@ -915,6 +949,207 @@
                           },
                           "columns": {
                             "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/2/properties/matrix/properties/columns"
+                          }
+                        },
+                        "required": [
+                          "mode",
+                          "rows",
+                          "columns"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "defaultValue": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "code",
+                      "type",
+                      "label",
+                      "matrix"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
+                      },
+                      "code": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "matrix"
+                      },
+                      "label": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/label"
+                      },
+                      "groupId": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/groupId"
+                      },
+                      "parentId": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/parentId"
+                      },
+                      "help": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/help"
+                      },
+                      "required": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/required"
+                      },
+                      "order": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/order"
+                      },
+                      "validation": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/validation"
+                      },
+                      "visibility": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/visibility"
+                      },
+                      "rendering": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/rendering"
+                      },
+                      "responseEncoding": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/responseEncoding"
+                      },
+                      "source": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/source"
+                      },
+                      "matrix": {
+                        "type": "object",
+                        "properties": {
+                          "mode": {
+                            "type": "string",
+                            "const": "number"
+                          },
+                          "rows": {
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/2/properties/matrix/properties/rows"
+                          },
+                          "columns": {
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/2/properties/matrix/properties/columns"
+                          }
+                        },
+                        "required": [
+                          "mode",
+                          "rows",
+                          "columns"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "defaultValue": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "code",
+                      "type",
+                      "label",
+                      "matrix"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
+                      },
+                      "code": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "matrix"
+                      },
+                      "label": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/label"
+                      },
+                      "groupId": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/groupId"
+                      },
+                      "parentId": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/parentId"
+                      },
+                      "help": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/help"
+                      },
+                      "required": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/required"
+                      },
+                      "order": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/order"
+                      },
+                      "validation": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/validation"
+                      },
+                      "visibility": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/visibility"
+                      },
+                      "rendering": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/rendering"
+                      },
+                      "responseEncoding": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/responseEncoding"
+                      },
+                      "source": {
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/source"
+                      },
+                      "matrix": {
+                        "type": "object",
+                        "properties": {
+                          "mode": {
+                            "type": "string",
+                            "const": "dual-single"
+                          },
+                          "rows": {
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/2/properties/matrix/properties/rows"
+                          },
+                          "columns": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "code": {
+                                  "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items/properties/code"
+                                },
+                                "label": {
+                                  "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items/properties/label"
+                                },
+                                "order": {
+                                  "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items/properties/order"
+                                },
+                                "options": {
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items"
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": [
+                                "code",
+                                "label",
+                                "options"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
                           }
                         },
                         "required": [

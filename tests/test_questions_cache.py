@@ -1,6 +1,7 @@
 import asyncio
 import json
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import services.remote_survey_loader as remote_survey_loader
 import services.remote_survey_structure_loader as remote_structure_loader
@@ -24,11 +25,11 @@ class _FakeCacheRepository:
         self.values = values
         self.saved = []
 
-    def get_json(self, key):
+    async def get_json(self, key):
         value = self.values.get(key)
         return json.loads(value) if isinstance(value, str) else value
 
-    def set_json(self, key, value, ttl_seconds):
+    async def set_json(self, key, value, ttl_seconds):
         self.values[key] = value
         self.saved.append((key, value, ttl_seconds))
 
@@ -97,7 +98,7 @@ def test_refresh_bypasses_grouped_question_cache_and_replaces_it(monkeypatch):
     monkeypatch.setattr(
         remote_survey_loader,
         "get_cached_optimal_params",
-        lambda _api: {"semaphore": 1, "maxAttempts": 1},
+        AsyncMock(return_value={"semaphore": 1, "maxAttempts": 1}),
     )
     monkeypatch.setattr(
         remote_survey_loader,
@@ -146,7 +147,7 @@ def test_remote_loader_enriches_groups_with_bounded_fetchers_and_caches(monkeypa
     monkeypatch.setattr(
         remote_survey_loader,
         "get_cached_optimal_params",
-        lambda _api: {"semaphore": 3, "maxAttempts": 2},
+        AsyncMock(return_value={"semaphore": 3, "maxAttempts": 2}),
     )
     monkeypatch.setattr(
         remote_survey_loader,
@@ -177,7 +178,7 @@ def test_remote_loader_reports_a_survey_without_groups(monkeypatch):
 
     api = SimpleNamespace(url="https://ls.example", username="reader", survey=_SurveyOperations())
     monkeypatch.setattr(remote_survey_loader, "cache_repository", _FakeCacheRepository({}))
-    monkeypatch.setattr(remote_survey_loader, "get_cached_optimal_params", lambda _api: None)
+    monkeypatch.setattr(remote_survey_loader, "get_cached_optimal_params", AsyncMock(return_value=None))
 
     try:
         asyncio.run(remote_survey_loader.load_questions(api, 123, "es"))
