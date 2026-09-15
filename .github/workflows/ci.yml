@@ -7,6 +7,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      ENV: test
+      FORM_BUILDER_SERVICE_JWT_SECRET: test-form-builder-secret-with-at-least-32-characters
+      DICTIONARY_SERVICE_JWT_SECRET: test-dictionary-secret-with-at-least-32-characters
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,13 +23,7 @@ jobs:
       - run: pip install -r requirements-dev.txt pip-audit
       - run: pip-audit -r requirements-dev.txt
       - run: pytest -q -m "not integration"
-        env:
-          ENV: test
-          FORM_BUILDER_SERVICE_JWT_SECRET: test-form-builder-secret-with-at-least-32-characters
-          DICTIONARY_SERVICE_JWT_SECRET: test-dictionary-secret-with-at-least-32-characters
       - run: python scripts/verify_compatibility.py > compatibility.json
-        env:
-          ENV: test
       - uses: actions/upload-artifact@v4
         with:
           name: synthetic-compatibility
