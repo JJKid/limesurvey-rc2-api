@@ -98,6 +98,19 @@ def test_response_endpoint_rejects_inverted_id_range(client, auth_headers):
     assert response.json()["detail"]["code"] == "INVALID_RESPONSE_RANGE"
 
 
+def test_unauthorized_session_does_not_consume_its_owners_export_quota(client, auth_headers, monkeypatch):
+    from fastapi import HTTPException
+    from unittest.mock import AsyncMock
+
+    resume = AsyncMock(side_effect=HTTPException(status_code=403, detail="Session belongs to another identity"))
+    limit = AsyncMock()
+    monkeypatch.setattr("routers.responses.resume_limesurvey_client", resume)
+    monkeypatch.setattr("routers.responses.enforce_response_export_rate_limit", limit)
+    response = client.get("/survey_responses/123", headers={**auth_headers, "X-LimeSurvey-Session": "another-session"})
+    assert response.status_code == 403
+    limit.assert_not_awaited()
+
+
 def test_response_loader_rejects_oversized_export(monkeypatch):
     monkeypatch.setattr("services.remote_response_loader.LS_RESPONSES_MAX_BYTES", 4)
     api = DummyApi(b"12345")

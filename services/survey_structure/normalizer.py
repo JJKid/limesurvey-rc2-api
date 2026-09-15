@@ -8,7 +8,7 @@ from .contract import validate_survey_load_result
 from .condition_parser import UnsupportedConditionError, build_condition_references, parse_limesurvey_condition
 from .source_values import _record, _list, _text, _number, _optional_number, _clean_html, _issue, _yes, _compact
 from .field_normalizer import normalize_field
-from .visibility_normalizer import log_unsupported_condition
+from .survey_settings import normalize_group, normalize_settings
 
 CONTRACT_VERSION = "2.0.0"
 
@@ -125,13 +125,13 @@ def build_survey_structure(payload: Dict[str, Any], source_format: str = "remote
         survey_structure["language"] = selected_language
     if available_languages:
         survey_structure["availableLanguages"] = available_languages
-    portable_groups = [_build_group(group, condition_references, issues) for group in groups]
+    portable_groups = [normalize_group(group, condition_references, issues) for group in groups]
     if portable_groups:
         ordered_groups = sorted(portable_groups, key=lambda group: group["order"])
         for index, group in enumerate(ordered_groups):
             group["order"] = index
         survey_structure["groups"] = ordered_groups
-    settings = _build_settings(survey, language_data)
+    settings = normalize_settings(survey, language_data)
     if settings:
         survey_structure["settings"] = settings
     load_result: Dict[str, Any] = {
@@ -152,72 +152,6 @@ def build_survey_structure(payload: Dict[str, Any], source_format: str = "remote
         if completion_context.get("endText"):
             load_result["responseState"]["endText"] = completion_context["endText"]
     return validate_survey_load_result(load_result)
-
-
-def _build_group(
-    group: Dict[str, Any],
-    condition_references: Dict[str, tuple[str, Optional[str]]],
-    issues: List[Dict[str, Any]],
-) -> Dict[str, Any]:
-    result = {
-        "id": _text(group.get("gid")),
-        "order": _number(group.get("group_order"), 0),
-    }
-    title = _clean_html(group.get("group_name"))
-    description = _clean_html(group.get("description"))
-    if title:
-        result["title"] = title
-    if description:
-        result["description"] = description
-    relevance = _text(group.get("grelevance")).strip()
-    group_id = _text(group.get("gid")).strip()
-    if group_id or relevance:
-        result["source"] = _compact({
-            "platform": "limesurvey",
-            "groupId": group_id or None,
-            "extensions": ([{
-                "type": "limesurvey-group",
-                "version": "1.0.0",
-                "relevanceExpression": relevance,
-            }] if relevance else None),
-        })
-    if relevance and relevance != "1":
-        try:
-            condition = parse_limesurvey_condition(relevance, condition_references)
-            if condition:
-                result["visibility"] = {"condition": condition}
-        except UnsupportedConditionError as error:
-            log_unsupported_condition(relevance, scope="group", owner=group_id)
-            issues.append(_issue(
-                "warning", "INVALID_EXPRESSION", str(error),
-                details={"sourceExpression": relevance, "scope": "group"},
-            ))
-    return result
-
-
-def _build_settings(survey: Dict[str, Any], language: Dict[str, Any]) -> Dict[str, Any]:
-    layout = {"A": "all", "G": "group", "S": "question"}.get(_text(survey.get("format")).upper())
-    show_group = _text(survey.get("showgroupinfo")).upper()
-    return _compact({
-        "layout": layout,
-        "showWelcome": _yes(survey.get("showwelcome")) if survey.get("showwelcome") is not None else None,
-        "showProgress": _yes(survey.get("showprogress")) if survey.get("showprogress") is not None else None,
-        "allowPrevious": _yes(survey.get("allowprev")) if survey.get("allowprev") is not None else None,
-        "showGroupName": show_group in {"B", "N"} if show_group else None,
-        "showGroupDescription": show_group in {"B", "D"} if show_group else None,
-        "questionIndex": {
-            -1: "inherit",
-            0: "disabled",
-            1: "incremental",
-            2: "full",
-        }.get(int(_optional_number(survey.get("questionindex")) or 0)),
-        # LimeSurvey can export -1 as an inherited/default sentinel. The
-        # portable setting stores the effective non-negative delay instead.
-        "navigationDelay": max(0, _optional_number(survey.get("navigationdelay")) or 0),
-        "welcomeText": _clean_html(language.get("surveyls_welcometext")) or None,
-        "endText": _clean_html(language.get("surveyls_endtext")) or None,
-        "policyNotice": _clean_html(language.get("surveyls_policy_notice")) or None,
-    })
 
 
 def _normalize_question(question: Dict[str, Any]) -> Dict[str, Any]:

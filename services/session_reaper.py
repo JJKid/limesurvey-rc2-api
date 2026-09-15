@@ -13,7 +13,12 @@ logger = logging.getLogger(__name__)
 async def run_session_reaper(stop: asyncio.Event, interval_seconds: float = 30.0) -> None:
     """Periodically claim expired sessions and close them once across workers."""
     while not stop.is_set():
-        for local_session_id, record in await session_repository.take_expired():
+        try:
+            expired_sessions = await session_repository.take_expired()
+        except Exception as exc:
+            logger.warning("Session cleanup is degraded; the next cycle will retry: %s", exc)
+            expired_sessions = []
+        for local_session_id, record in expired_sessions:
             try:
                 api = LimeSurveyClient.from_session_key(
                     url=record.url,

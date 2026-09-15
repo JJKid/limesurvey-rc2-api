@@ -44,13 +44,15 @@ class CacheRepository:
             await client.delete(key)
 
     async def increment_with_ttl(self, key: str, ttl_seconds: int) -> Optional[int]:
+        """Increment and set expiry atomically, repairing a counter with no TTL."""
         client = get_redis_client()
         if client is None:
             return None
-        current = int(await client.incr(key))
-        if current == 1:
-            await client.expire(key, ttl_seconds)
-        return current
+        return int(await client.eval("""
+            local current = redis.call('INCR', KEYS[1])
+            redis.call('EXPIRE', KEYS[1], ARGV[1], 'NX')
+            return current
+        """, 1, key, ttl_seconds))
 
     async def acquire_lock(self, key: str, ttl_seconds: int) -> bool:
         client = get_redis_client()

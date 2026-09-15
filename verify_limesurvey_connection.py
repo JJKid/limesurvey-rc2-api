@@ -1,10 +1,10 @@
-"""Run one real login/read/logout check against a local limesurvey-rc2-api."""
+"""Verify real LimeSurvey login, survey listing, structure loading and logout through the adapter."""
 
 import argparse
 import time
 
 import requests
-from jose import jwt
+import jwt
 
 
 def _authorization_header(args: argparse.Namespace) -> str:
@@ -56,7 +56,7 @@ def main():
             **auth_headers,
             "X-LimeSurvey-Session": session_key,
         }
-        print("Local session UUID:", session_key)
+        print("LimeSurvey session opened through the adapter.")
 
         surveys = requests.get(
             f"{args.api}/surveys",
@@ -66,7 +66,6 @@ def main():
         surveys.raise_for_status()
         survey_rows = surveys.json()
         print("Visible surveys:", len(survey_rows))
-        print("First surveys:", survey_rows[:2])
 
         query = {"language": args.language} if args.language else None
         structure = requests.get(
@@ -94,6 +93,7 @@ def main():
                 timeout=15,
             )
             print("Logout status:", logout.status_code)
+            logout.raise_for_status()
 
 if __name__ == "__main__":
     main()

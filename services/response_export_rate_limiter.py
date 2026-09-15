@@ -7,7 +7,7 @@ from typing import Deque, Dict
 
 from fastapi import HTTPException
 
-from core.config import LS_RESPONSES_RATE_LIMIT_PER_MIN
+from core.config import ALLOW_IN_MEMORY_STATE, IS_PRODUCTION, LS_RESPONSES_RATE_LIMIT_PER_MIN
 from repositories.cache_repository import cache_repository
 
 
@@ -30,6 +30,9 @@ async def enforce_response_export_rate_limit(session_key: str, survey_id: int) -
         raise
     except Exception:
         pass
+
+    if IS_PRODUCTION or not ALLOW_IN_MEMORY_STATE:
+        raise HTTPException(status_code=503, detail="Shared rate limiting is unavailable. Try again later.")
 
     now = time.time()
     bucket = _memory_attempts.setdefault(identity, deque())

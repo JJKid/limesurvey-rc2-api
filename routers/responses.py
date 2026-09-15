@@ -49,8 +49,8 @@ async def get_survey_responses(
             },
         )
     normalized_fields = _normalize_fields(fields)
-    await enforce_response_export_rate_limit(session_key, sid)
     api = await resume_limesurvey_client(session_key, auth)
+    await enforce_response_export_rate_limit(session_key, sid)
     file_format = "csv" if "text/csv" in accept.lower() else "json"
     try:
         export = await load_responses(

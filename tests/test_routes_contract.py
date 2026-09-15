@@ -1,6 +1,6 @@
 import time
 
-from jose import jwt
+import jwt
 
 from core.config import (
     FORM_BUILDER_SERVICE_JWT_ISSUER,

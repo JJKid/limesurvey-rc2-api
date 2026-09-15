@@ -15,7 +15,6 @@ from core.account_identity import account_cache_id
 from core.config import DEFAULT_OPTIMAL_PARAMS
 from repositories.cache_repository import cache_repository
 from schemas import QuestionsResp
-from services.error_mapper import is_limesurvey_remote_unreachable
 from services.limesurvey_fetchers import make_fetchers
 from services.optimizer_service import get_cached_optimal_params
 from services.remote_call_executor import run_remote_call
@@ -126,9 +125,8 @@ async def _load_group_questions(
 ) -> QuestionsResp:
     """Load one group's questions and enrich each one with its properties.
 
-    A non-connectivity failure in one property request skips only that question.
-    A connectivity failure aborts the complete load so the router can report the
-    remote LimeSurvey instance as unavailable.
+    Any failed property request aborts the load. A missing question is not a
+    complete survey and must never enter the completed-question cache.
     """
     group_id = group["gid"]
     group_relevance = str(group.get("grelevance") or "1").strip() or "1"
@@ -155,22 +153,10 @@ async def _load_group_questions(
         fetch_properties(question["qid"], semaphore, max_attempts, language)
         for question in group_questions
     ]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    results = await asyncio.gather(*tasks)
 
     enriched_questions: QuestionsResp = []
     for question, result in zip(group_questions, results):
-        if isinstance(result, Exception):
-            if is_limesurvey_remote_unreachable(result):
-                raise result
-            logger.warning(
-                "group_processing question property fetch failed sid=%s gid=%s qid=%s error=%s",
-                sid,
-                group_id,
-                question["qid"],
-                result,
-            )
-            continue
-
         enriched_questions.append({
             **question,
             **result,

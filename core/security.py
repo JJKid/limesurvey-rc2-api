@@ -5,7 +5,8 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError
 
 from core.config import (
     JWT_ALGORITHM,
@@ -53,12 +54,13 @@ def verify_token(
     try:
         header = jwt.get_unverified_header(token)
         if header.get("typ") != JWT_TOKEN_TYPE:
-            raise JWTError("JWT type is not accepted")
-        unverified = jwt.get_unverified_claims(token)
+            raise InvalidTokenError("JWT type is not accepted")
+        # Unverified iss selects a configured key only; trust starts after decode.
+        unverified = jwt.decode(token, options={"verify_signature": False})
         issuer = str(unverified.get("iss") or "")
         secret = JWT_ISSUER_SECRETS.get(issuer)
         if not secret:
-            raise JWTError("JWT issuer is not trusted")
+            raise InvalidTokenError("JWT issuer is not trusted")
         claims = jwt.decode(
             token,
             secret,
@@ -66,17 +68,13 @@ def verify_token(
             audience=JWT_AUDIENCE,
             issuer=issuer,
             options={
-                "require_aud": True,
-                "require_exp": True,
-                "require_iat": True,
-                "require_iss": True,
-                "require_sub": True,
+                "require": ["aud", "exp", "iat", "iss", "sub"],
             },
         )
         subject = str(claims.get("sub") or "").strip()
         if not subject:
-            raise JWTError("JWT subject is missing")
-    except JWTError:
+            raise InvalidTokenError("JWT subject is missing")
+    except InvalidTokenError:
         raise HTTPException(status_code=401, detail="Internal service token is invalid or expired")
 
     return AuthenticatedIdentity(subject=subject, issuer=issuer)

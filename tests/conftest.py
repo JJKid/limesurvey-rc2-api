@@ -4,7 +4,7 @@ import sys
 
 import pytest
 from fastapi.testclient import TestClient
-from jose import jwt
+import jwt
 
 # Ensure /app (repo root inside container) is importable when pytest starts from /app/tests.
 TESTS_DIR = Path(__file__).resolve().parent

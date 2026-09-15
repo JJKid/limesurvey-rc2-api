@@ -8,10 +8,12 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt ./
+COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN useradd --uid 10001 --create-home adapter
+USER adapter
 
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=4s --retries=10 \

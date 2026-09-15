@@ -13,6 +13,8 @@ from core.config import (
     REDIS_PASSWORD,
     REDIS_PORT,
     REDIS_SSL,
+    REDIS_SSL_CA_CERTS,
+    REDIS_USERNAME,
 )
 
 
@@ -23,20 +25,28 @@ _redis_client: Optional[redis.Redis] = None
 async def initialize_redis() -> None:
     """Open and verify Redis, failing closed in production."""
     global _redis_client
+    client = None
     try:
         client = redis.Redis(
             host=REDIS_HOST,
             port=REDIS_PORT,
             password=REDIS_PASSWORD,
+            username=REDIS_USERNAME,
             db=REDIS_DB,
             ssl=REDIS_SSL,
             decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+            **({"ssl_ca_certs": REDIS_SSL_CA_CERTS, "ssl_cert_reqs": "required",
+                "ssl_check_hostname": True} if REDIS_SSL else {}),
         )
         await client.ping()
         _redis_client = client
         logger.info("Connected to Redis DB %s", REDIS_DB)
     except Exception as exc:
         _redis_client = None
+        if client is not None:
+            await client.aclose()
         if IS_PRODUCTION or not ALLOW_IN_MEMORY_STATE:
             raise RuntimeError("Redis is required but could not be reached") from exc
         logger.warning("Redis is unavailable; development-only memory state is active: %s", exc)

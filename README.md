@@ -1,12 +1,12 @@
 # limesurvey-rc2-api
 
-FastAPI para autenticar servicios contra LimeSurvey RemoteControl 2, listar
-encuestas, producir `SurveyStructure` y exportar respuestas. No genera
-diccionarios; `limesurvey-dictionary-api` utiliza su salida para hacerlo.
+English | [Español](README.es.md)
 
-## 1. Configurar y levantar
+FastAPI service for authenticating services against LimeSurvey RemoteControl 2, listing surveys, producing `SurveyStructure` and exporting responses. It does not generate dictionaries; `limesurvey-dictionary-api` uses its output for that purpose.
 
-La forma recomendada usa el `compose.yaml` de `limesurvey-dictionary-api`:
+## 1. Configure and run
+
+The recommended deployment uses `limesurvey-dictionary-api`'s `compose.yaml`. **The dictionary API's current development revision depends on unpublished local npm archives.** Its package prerequisites must be resolved before promising a clean standalone deployment; see that repository's README. FastAPI itself carries the generated contract artifacts and local validator.
 
 ```bash
 mkdir limesurvey-dictionary-service
@@ -19,7 +19,7 @@ cd limesurvey-dictionary-api
 cp .env.example .env
 ```
 
-Configure `.env` siguiendo el README de la API de diccionarios y ejecute:
+Configure `.env` following the dictionary API README, then run:
 
 ```bash
 docker compose up --build -d
@@ -27,45 +27,41 @@ docker compose ps
 curl http://127.0.0.1:8000/health
 ```
 
-Resultado esperado:
+Expected result:
 
 ```json
 {"detail":"ok"}
 ```
 
-| Recurso | Dirección |
+| Resource | Address |
 | --- | --- |
 | FastAPI | `http://127.0.0.1:8000` |
 | Swagger | `http://127.0.0.1:8000/docs` |
 | OpenAPI | `http://127.0.0.1:8000/openapi.json` |
-| API pública de diccionarios | `http://127.0.0.1:8100` |
+| Public dictionary API | `http://127.0.0.1:8100` |
 
-El `.env` del otro repositorio configura automáticamente este contenedor con
-`DICTIONARY_SERVICE_JWT_SECRET`, Redis y la lista de hosts LimeSurvey
-permitidos. No hace falta crear otro `.env` aquí para ese despliegue.
+The other repository's `.env` configures this container automatically with `DICTIONARY_SERVICE_JWT_SECRET`, Redis and the allowed LimeSurvey hosts. You do not need another `.env` here for that deployment.
 
-Para LimeSurvey local:
+For local LimeSurvey:
 
 ```dotenv
 ALLOWED_LIMESURVEY_HOSTS=host.docker.internal,localhost,127.0.0.1
 ALLOW_INSECURE_LIMESURVEY_HTTP=true
 ```
 
-Para LimeSurvey remoto use su dominio y HTTPS.
+For remote LimeSurvey, use its domain and HTTPS.
 
-## 2. Autenticación
+## 2. Authentication
 
-Salvo `/health` y `/smoke`, las rutas requieren:
+Application routes, except `/health` and `/smoke`, require:
 
 ```http
 Authorization: Bearer <JWT_INTERNO>
 ```
 
-El JWT lo genera un servicio autorizado, como `limesurvey-dictionary-api`. El
-usuario normal de Postman no necesita construirlo cuando llama al puerto
-`8100`.
+An authorized service, such as `limesurvey-dictionary-api`, creates the JWT. A regular Postman consumer does not need to create it when calling port `8100`.
 
-Después del login, este servicio devuelve un UUID local:
+After login, this service returns a local UUID:
 
 ```json
 {
@@ -73,36 +69,32 @@ Después del login, este servicio devuelve un UUID local:
 }
 ```
 
-Las siguientes llamadas lo envían como:
+Subsequent requests send it as:
 
 ```http
 X-LimeSurvey-Session: 5edc24c7-9ee7-48c1-8529-b6d8dd535810
 ```
 
-El UUID identifica temporalmente en Redis la sesión LimeSurvey y sólo puede
-usarlo la misma identidad JWT que la abrió.
+The UUID temporarily identifies the LimeSurvey session in Redis. Only the JWT identity that opened the session can use it.
 
-## 3. Probar los endpoints
+## 3. Test the endpoints
 
-### Prueba mediante la API pública
+### Through the public API
 
-Para probar el flujo que genera diccionarios, importe la colección de
-`limesurvey-dictionary-api`:
+To test dictionary generation, import the collection supplied by `limesurvey-dictionary-api`:
 
 ```text
 postman/limesurvey-dictionary-api.local.postman_collection.json
 ```
 
-La colección llama al puerto `8100`; la API pública crea el JWT y llama a este
-adaptador automáticamente.
+The collection calls port `8100`. The public API creates the internal JWT and calls this adapter automatically.
 
-### Prueba directa de FastAPI
+### Direct FastAPI check
 
-`smoke_local.py` prueba con datos reales: login, listado, carga de encuesta y
-logout. Desde la carpeta `limesurvey-dictionary-api`, donde corre Compose:
+`verify_limesurvey_connection.py` uses real data: login, listing, survey loading and logout. Run from the `limesurvey-dictionary-api` directory where Compose is running:
 
 ```bash
-docker compose exec -T limesurvey-rc2-api python smoke_local.py \
+docker compose exec -T limesurvey-rc2-api python verify_limesurvey_connection.py \
   --api http://127.0.0.1:8000 \
   --url http://host.docker.internal/limesurvey/index.php/admin/remotecontrol \
   --user '<usuario-limesurvey>' \
@@ -113,24 +105,20 @@ docker compose exec -T limesurvey-rc2-api python smoke_local.py \
   --jwt-issuer limesurvey-dictionary-api
 ```
 
-Sustituya los marcadores por los datos configurados. Swagger permite probar
-solicitudes individuales en `http://127.0.0.1:8000/docs`, pero exige un JWT
-interno válido.
+Replace placeholders with configured values. Swagger at `http://127.0.0.1:8000/docs` can run individual requests but requires a valid internal JWT.
 
-## 4. Integración directa desde otro servicio
-
-La secuencia es:
+## 4. Direct service integration
 
 ```text
-Servicio consumidor
-  → genera JWT interno corto
-  → abre sesión con URL, usuario y contraseña LimeSurvey
-  → recibe UUID local
-  → usa JWT + UUID para consultar encuestas o respuestas
-  → cierra la sesión
+Consumer service
+  → creates a short-lived internal JWT
+  → opens a session with the LimeSurvey URL, username and password
+  → receives a local UUID
+  → uses JWT + UUID to query surveys or responses
+  → closes the session
 ```
 
-### Abrir sesión
+### Open a session
 
 ```http
 POST /login-limesurvey
@@ -146,9 +134,9 @@ Content-Type: application/json
 }
 ```
 
-La respuesta contiene `session_key`. La contraseña no se persiste.
+The response contains `session_key`. The password is not persisted.
 
-### Listar encuestas
+### List surveys
 
 ```http
 GET /surveys
@@ -156,9 +144,9 @@ Authorization: Bearer <JWT_INTERNO>
 X-LimeSurvey-Session: <UUID_LOCAL>
 ```
 
-Agregue `?refresh=true` para ignorar la caché.
+Add `?refresh=true` to bypass the cache.
 
-### Obtener la estructura normalizada
+### Get the normalized structure
 
 ```http
 GET /survey_structure/783587?language=es
@@ -166,7 +154,7 @@ Authorization: Bearer <JWT_INTERNO>
 X-LimeSurvey-Session: <UUID_LOCAL>
 ```
 
-Respuesta:
+Response:
 
 ```json
 {
@@ -179,10 +167,9 @@ Respuesta:
 }
 ```
 
-La respuesta completa es `SurveyLoadResult`; `survey` contiene el
-`SurveyStructure` e `issues` los diagnósticos de importación.
+The complete response is `SurveyLoadResult`. `survey` contains `SurveyStructure` and `issues` contains import diagnostics.
 
-### Exportar respuestas
+### Export responses
 
 ```http
 GET /survey_responses/783587?language=es&completionStatus=all&headingType=code
@@ -191,10 +178,11 @@ X-LimeSurvey-Session: <UUID_LOCAL>
 Accept: application/json
 ```
 
-Use `Accept: text/csv` para CSV. La operación es de sólo lectura y no cachea
-las respuestas.
+Use `Accept: text/csv` for CSV. This operation is read-only and does not cache responses.
 
-### Cerrar sesión
+Citric receives the complete export before its size is checked; this is not an incremental download from LimeSurvey. For large volumes, constrain the interval with `fromResponseId` and `toResponseId`. Time and size limits reject excessive exports but do not guarantee constant memory use.
+
+### Close the session
 
 ```http
 GET /logout-limesurvey
@@ -202,9 +190,9 @@ Authorization: Bearer <JWT_INTERNO>
 X-LimeSurvey-Session: <UUID_LOCAL>
 ```
 
-## 5. Importar un `.lss`
+## 5. Import a `.lss` file
 
-No requiere sesión LimeSurvey, pero sí JWT interno:
+No LimeSurvey session is required, but an internal JWT is:
 
 ```http
 POST /survey_structures/from-lss?language=es
@@ -214,69 +202,60 @@ Content-Type: multipart/form-data
 file: <archivo.lss>
 ```
 
-Devuelve `SurveyLoadResult`, limita el archivo a 20 MiB, rechaza XML inseguro y
-valida la estructura normalizada.
+The route returns `SurveyLoadResult`, limits the file to 20 MiB, rejects unsafe XML and validates the normalized structure.
 
-## 6. Rutas principales
+## 6. Main routes
 
-| Método y ruta | Autorización | Resultado |
+| Method and route | Authorization | Result |
 | --- | --- | --- |
-| `GET /health` | Ninguna | Estado del servicio. |
-| `POST /login-limesurvey` | JWT | Abre sesión y devuelve UUID local. |
-| `GET /surveys` | JWT + UUID | Encuestas visibles. |
-| `GET /survey_structure/{sid}` | JWT + UUID | `SurveyLoadResult` remoto. |
-| `POST /survey_structures/from-lss` | JWT | `SurveyLoadResult` desde archivo. |
-| `GET /survey_responses/{sid}` | JWT + UUID | Respuestas JSON o CSV. |
-| `GET /logout-limesurvey` | JWT + UUID | Cierra sesión. |
+| `GET /health` | None | Service health. |
+| `POST /login-limesurvey` | JWT | Opens a session and returns a local UUID. |
+| `GET /surveys` | JWT + UUID | Visible surveys. |
+| `GET /survey_structure/{sid}` | JWT + UUID | Remote `SurveyLoadResult`. |
+| `POST /survey_structures/from-lss` | JWT | File-based `SurveyLoadResult`. |
+| `GET /survey_responses/{sid}` | JWT + UUID | JSON or CSV responses. |
+| `GET /logout-limesurvey` | JWT + UUID | Closes the session. |
 
-## 7. Códigos de error HTTP
+## 7. HTTP error codes
 
-| Estado | Código o detalle | Significado |
+| Status | Code or detail | Meaning |
 | --- | --- | --- |
-| `400` | `LIMESURVEY_URL_NOT_ALLOWED` | La URL o el host no están permitidos. |
-| `400` | `INVALID_RESPONSE_RANGE` | El rango de respuestas es inválido. |
-| `400` | `TOO_MANY_RESPONSE_FIELDS` | Se solicitaron demasiadas columnas. |
-| `401` | `Internal service token is missing` | No se envió JWT. |
-| `401` | `Internal service token is invalid or expired` | El JWT es inválido o venció. |
-| `401` | `LS_SESSION_EXPIRED` | La sesión remota venció; debe repetir el login. |
-| `401` | `LimeSurvey session was not found or has expired` | El UUID local no existe o venció. |
-| `403` | `LimeSurvey session belongs to another authenticated identity` | Otra identidad intenta usar el UUID. |
-| `413` | `LS_RESPONSE_EXPORT_TOO_LARGE` | La exportación excede el límite. |
-| `502` | `LS_REMOTE_CONTROL_UNAVAILABLE` | RemoteControl 2 no está disponible. |
-| `502` | `LS_REMOTE_REJECTED_REQUEST` | LimeSurvey rechazó la operación. |
-| `502` | `INVALID_LS_RESPONSE_EXPORT` | La exportación tiene formato inesperado. |
-| `503` | `LS_UNREACHABLE` | No se pudo conectar con LimeSurvey. |
-| `504` | `LS_SURVEY_LOAD_TIMEOUT` | La carga de encuesta excedió el tiempo. |
-| `504` | `LS_RESPONSE_EXPORT_TIMEOUT` | La exportación excedió el tiempo. |
-| `500` | `LS_UNKNOWN` | Error no clasificado. |
-| `500` | `INVALID_SURVEY_STRUCTURE` | La normalización produjo una encuesta o resultado de carga inválido. `detail.errors` conserva la ruta y la regla de cada fallo. |
+| `400` | `LIMESURVEY_URL_NOT_ALLOWED` | URL or host is not allowed. |
+| `400` | `INVALID_RESPONSE_RANGE` | Invalid response range. |
+| `400` | `TOO_MANY_RESPONSE_FIELDS` | Too many requested columns. |
+| `401` | `Internal service token is missing` | JWT was not sent. |
+| `401` | `Internal service token is invalid or expired` | Invalid or expired JWT. |
+| `401` | `LS_SESSION_EXPIRED` | Remote session expired; log in again. |
+| `401` | `LimeSurvey session was not found or has expired` | Local UUID is missing or expired. |
+| `403` | `LimeSurvey session belongs to another authenticated identity` | Another identity tried to use the UUID. |
+| `413` | `LS_RESPONSE_EXPORT_TOO_LARGE` | Export exceeds its limit. |
+| `502` | `LS_REMOTE_CONTROL_UNAVAILABLE` | RemoteControl 2 unavailable. |
+| `502` | `LS_REMOTE_REJECTED_REQUEST` | LimeSurvey rejected the operation. |
+| `502` | `INVALID_LS_RESPONSE_EXPORT` | Unexpected export format. |
+| `503` | `LS_UNREACHABLE` | Cannot connect to LimeSurvey. |
+| `504` | `LS_SURVEY_LOAD_TIMEOUT` | Survey loading exceeded its time limit. |
+| `504` | `LS_RESPONSE_EXPORT_TIMEOUT` | Export exceeded its time limit. |
+| `500` | `LS_UNKNOWN` | Unclassified error. |
+| `500` | `INVALID_SURVEY_STRUCTURE` | Normalization produced an invalid survey or load result. `detail.errors` preserves each failure's path and rule. |
 
-FastAPI coloca el error en `detail`. Cuando es estructurado, el código se
-encuentra en `detail.code`.
+FastAPI puts errors in `detail`. Structured errors carry their code in `detail.code`.
 
-## 8. Pruebas automatizadas
+## 8. Automated tests
 
-Sin una instancia LimeSurvey:
+Without a LimeSurvey instance:
 
-Instale también Node 18 o posterior (Docker ya incluye Node 22). La salida del
-normalizador se revisa con `schemas/validate-survey.cjs`, generado desde el
-mismo Zod de `survey-structure`, incluidas las reglas entre preguntas. Los
-archivos JSON Schema describen el contrato, pero no sustituyen esa validación.
-El proceso local tiene un límite de cinco segundos y 16 MiB por documento;
-si no puede ejecutarse, la solicitud falla sin devolver datos sin validar.
+Install Node 18 or later as well (Docker includes Node 22). Normalizer output is checked using `schemas/validate-survey.cjs`, generated from the same `survey-structure` Zod definition, including cross-question rules. JSON Schema files describe the contract but do not replace full validation. The local process is limited to five seconds and 16 MiB per document; if it cannot run, the request fails instead of returning unchecked data.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 pytest -q -m "not integration"
 ```
 
-Las pruebas sintéticas están incluidas. Las comparaciones adicionales con
-exportaciones locales de `tests/fixtures/` se omiten explícitamente si esa
-carpeta no está presente; sus datos no se publican en este repositorio.
+Synthetic tests are included. Additional comparisons using local `tests/fixtures/` exports are explicitly skipped when that directory is absent; its data is not published in this repository.
 
-Prueba de integración real:
+Real integration test:
 
 ```bash
 LS_INTEGRATION_URL='https://encuestas.example.org/index.php/admin/remotecontrol' \
@@ -286,13 +265,11 @@ LS_INTEGRATION_SID='783587' \
 pytest -q -m integration
 ```
 
-No guarde estas credenciales en Git.
+Do not commit those credentials.
 
-## 9. Límites operativos y XML
+## 9. Operational limits and XML
 
-La configuración predeterminada permite cinco segundos para establecer una
-conexión con LimeSurvey y treinta para leer cada respuesta. La carga completa
-de una encuesta se limita a 120 segundos. Pueden ajustarse mediante:
+Defaults allow five seconds to establish a LimeSurvey connection and thirty seconds to read each response. Loading a complete survey is limited to 120 seconds. Configure:
 
 ```dotenv
 LS_REMOTE_CONNECT_TIMEOUT_SECONDS=5
@@ -300,9 +277,7 @@ LS_REMOTE_READ_TIMEOUT_SECONDS=30
 LS_SURVEY_LOAD_TIMEOUT_SECONDS=120
 ```
 
-El ajuste automático de concurrencia es opcional y permanece desactivado por
-defecto. Si se habilita, se ejecuta en segundo plano sobre una muestra acotada
-y conserva el resultado durante 72 horas:
+Automatic concurrency tuning is optional and disabled by default. When enabled, it runs in the background over a bounded sample and retains the result for 72 hours:
 
 ```dotenv
 LS_OPTIMIZER_ENABLED=false
@@ -313,6 +288,4 @@ LS_OPTIMIZER_MAX_GROUPS=10
 LS_OPTIMIZER_MAX_SAMPLE_QUESTIONS=10
 ```
 
-Los archivos `.lss` se limitan a 20 MiB. El importador rechaza declaraciones
-`DOCTYPE` y `ENTITY`, usa un analizador protegido contra expansión de
-entidades y convierte etiquetas y ayudas HTML a texto plano.
+`.lss` files are limited to 20 MiB. The importer rejects `DOCTYPE` and `ENTITY` declarations, uses a parser protected against entity expansion and converts HTML labels and help text to plain text.

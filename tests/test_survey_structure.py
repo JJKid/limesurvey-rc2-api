@@ -113,7 +113,7 @@ def test_synthetic_display_question_lss_maps_x_without_a_response_field():
             "extensions": [{
                 "type": "limesurvey-question",
                 "version": "1.0.0",
-                "relevanceExpression": "1",
+                "questionRelevanceExpression": "1",
             }],
         },
         "groupId": "10",
@@ -131,7 +131,7 @@ def test_synthetic_selection_count_lss_uses_generic_codes_and_portable_condition
     ]
     assert fields["QUESTION_2"]["visibility"]["condition"] == {
         "type": "selection-count",
-        "reference": {"fieldCode": "QUESTION_1"},
+        "responseReference": {"fieldCode": "QUESTION_1"},
         "operator": "greater-than-or-equal",
         "value": 2,
     }
@@ -175,11 +175,11 @@ def test_builder_preserves_source_expression_and_emits_portable_condition():
         item for item in field["source"]["extensions"]
         if item["type"] == "limesurvey-question"
     )
-    assert extension["relevanceExpression"] == '900001X10X100.NAOK == "A1"'
+    assert extension["questionRelevanceExpression"] == '900001X10X100.NAOK == "A1"'
     assert field["visibility"] == {
         "condition": {
             "type": "comparison",
-            "reference": {"fieldCode": "SOURCE"},
+            "responseReference": {"fieldCode": "SOURCE"},
             "operator": "equals",
             "value": "A1",
         }
@@ -211,11 +211,11 @@ def test_builder_keeps_group_and_question_visibility_as_separate_neutral_rules()
         ],
     })
     survey = load_result["survey"]
-    assert survey["groups"][0]["visibility"]["condition"]["reference"]["fieldCode"] == "CONSENT"
+    assert survey["groups"][0]["visibility"]["condition"]["responseReference"]["fieldCode"] == "CONSENT"
     follow_up = next(field for field in survey["fields"] if field["code"] == "FOLLOW_UP")
     assert follow_up["visibility"]["condition"] == {
         "type": "comparison",
-        "reference": {"fieldCode": "AGE"},
+        "responseReference": {"fieldCode": "AGE"},
         "operator": "greater-than-or-equal",
         "value": 18,
     }
@@ -429,7 +429,7 @@ def _condition_references(field):
     references = set()
 
     def visit(condition):
-        reference = condition.get("reference")
+        reference = condition.get("responseReference")
         if reference:
             references.add((reference["fieldCode"], reference.get("responseItemCode")))
         for child in condition.get("conditions", []):

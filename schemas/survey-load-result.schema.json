@@ -62,16 +62,16 @@
                                 "type": "string",
                                 "const": "comparison"
                               },
-                              "reference": {
+                              "responseReference": {
                                 "type": "object",
                                 "properties": {
                                   "fieldCode": {
                                     "type": "string",
-                                    "minLength": 1
+                                    "minLength": 1,
+                                    "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
                                   },
                                   "responseItemCode": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                                   }
                                 },
                                 "required": [
@@ -113,7 +113,7 @@
                             },
                             "required": [
                               "type",
-                              "reference",
+                              "responseReference",
                               "operator",
                               "value"
                             ],
@@ -129,13 +129,13 @@
                                   "not-answered"
                                 ]
                               },
-                              "reference": {
-                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/reference"
+                              "responseReference": {
+                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference"
                               }
                             },
                             "required": [
                               "type",
-                              "reference"
+                              "responseReference"
                             ],
                             "additionalProperties": false
                           },
@@ -146,8 +146,8 @@
                                 "type": "string",
                                 "const": "selection-count"
                               },
-                              "reference": {
-                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/reference"
+                              "responseReference": {
+                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference"
                               },
                               "operator": {
                                 "type": "string",
@@ -167,7 +167,32 @@
                             },
                             "required": [
                               "type",
-                              "reference",
+                              "responseReference",
+                              "operator",
+                              "value"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "answered-count"
+                              },
+                              "responseReference": {
+                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference"
+                              },
+                              "operator": {
+                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/2/properties/operator"
+                              },
+                              "value": {
+                                "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/2/properties/value"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "responseReference",
                               "operator",
                               "value"
                             ],
@@ -264,7 +289,7 @@
                                   "type": "string",
                                   "const": "1.0.0"
                                 },
-                                "relevanceExpression": {
+                                "groupRelevanceExpression": {
                                   "type": "string"
                                 }
                               },
@@ -303,8 +328,7 @@
                         "minLength": 1
                       },
                       "code": {
-                        "type": "string",
-                        "minLength": 1
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -525,10 +549,10 @@
                                       "type": "string",
                                       "const": "1.0.0"
                                     },
-                                    "relevanceExpression": {
+                                    "questionRelevanceExpression": {
                                       "type": "string"
                                     },
-                                    "fullConditionExpression": {
+                                    "questionAndGroupRelevanceExpression": {
                                       "type": "string"
                                     },
                                     "dateTimeFormat": {
@@ -537,6 +561,18 @@
                                     "nativeValidation": {
                                       "type": "object",
                                       "properties": {
+                                        "minimumNumericValueExpression": {
+                                          "type": "string"
+                                        },
+                                        "maximumNumericValueExpression": {
+                                          "type": "string"
+                                        },
+                                        "minimumAnswerExpression": {
+                                          "type": "string"
+                                        },
+                                        "maximumAnswerExpression": {
+                                          "type": "string"
+                                        },
                                         "minimumAnswersExpression": {
                                           "type": "string"
                                         },
@@ -583,8 +619,7 @@
                           "type": "object",
                           "properties": {
                             "code": {
-                              "type": "string",
-                              "minLength": 1
+                              "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                             },
                             "label": {
                               "type": "string"
@@ -608,20 +643,17 @@
                         "type": "object",
                         "properties": {
                           "code": {
-                            "type": "string",
-                            "minLength": 1
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                           },
                           "label": {
                             "type": "string",
                             "minLength": 1
                           },
                           "textResponseKey": {
-                            "type": "string",
-                            "minLength": 1
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                           },
                           "commentResponseKey": {
-                            "type": "string",
-                            "minLength": 1
+                            "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                           }
                         },
                         "required": [
@@ -648,7 +680,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -723,7 +755,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -812,7 +844,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -898,7 +930,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -984,7 +1016,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1070,7 +1102,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1125,7 +1157,7 @@
                               "type": "object",
                               "properties": {
                                 "code": {
-                                  "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items/properties/code"
+                                  "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                                 },
                                 "label": {
                                   "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/options/items/properties/label"
@@ -1185,7 +1217,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1233,8 +1265,7 @@
                               "type": "string"
                             },
                             "code": {
-                              "type": "string",
-                              "minLength": 1
+                              "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                             },
                             "label": {
                               "type": "string"
@@ -1274,7 +1305,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1335,7 +1366,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1396,7 +1427,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1465,7 +1496,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1523,7 +1554,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",
@@ -1578,7 +1609,7 @@
                         "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/id"
                       },
                       "code": {
-                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/fields/items/anyOf/0/properties/code"
+                        "$ref": "#/definitions/SurveyLoadResult/properties/survey/properties/groups/items/properties/visibility/properties/condition/anyOf/0/properties/responseReference/properties/fieldCode"
                       },
                       "type": {
                         "type": "string",

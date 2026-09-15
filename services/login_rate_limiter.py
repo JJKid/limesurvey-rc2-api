@@ -1,7 +1,7 @@
 """
 Basic rate limiter for /login-limesurvey.
 
-Uses Redis when available, with in-memory fallback.
+Uses shared Redis, with in-memory fallback only when explicitly allowed in development.
 """
 
 import time
@@ -10,7 +10,7 @@ from typing import Deque, Dict
 
 from fastapi import HTTPException
 
-from core.config import LS_LOGIN_RATE_LIMIT_PER_MIN
+from core.config import ALLOW_IN_MEMORY_STATE, IS_PRODUCTION, LS_LOGIN_RATE_LIMIT_PER_MIN
 from repositories.cache_repository import cache_repository
 
 
@@ -34,8 +34,10 @@ async def enforce_login_rate_limit(client_ip: str, username: str) -> None:
     except HTTPException:
         raise
     except Exception:
-        # Development fallback when Redis becomes unavailable.
         pass
+
+    if IS_PRODUCTION or not ALLOW_IN_MEMORY_STATE:
+        raise HTTPException(status_code=503, detail="Shared rate limiting is unavailable. Try again later.")
 
     now = time.time()
     bucket = _memory_attempts.setdefault(key, deque())

@@ -3,6 +3,8 @@ Authentication/session lifecycle endpoints for LimeSurvey remote control.
 """
 
 import asyncio
+import logging
+import threading
 import uuid
 from urllib.parse import urlsplit, urlunsplit
 
@@ -23,6 +25,7 @@ from services.limesurvey_session_service import (
 
 
 router = APIRouter(tags=["limesurvey-sessions"])
+logger = logging.getLogger(__name__)
 
 
 def resolve_limesurvey_url_for_container(url: str) -> str:
@@ -67,30 +70,69 @@ async def login_limesurvey(
 
     limesurvey_url = resolve_limesurvey_url_for_container(trusted_url)
     api = LimeSurveyClient(url=limesurvey_url, username=credentials.username)
+    finished = threading.Event()
+    abandoned = threading.Event()
+    cleanup_lock = threading.Lock()
+    cleanup_started = False
+
+    def close_abandoned_session() -> None:
+        nonlocal cleanup_started
+        with cleanup_lock:
+            if cleanup_started:
+                return
+            cleanup_started = True
+        try:
+            api.close()
+        except Exception as exc:
+            logger.warning("Could not close an abandoned LimeSurvey login (%s).", type(exc).__name__)
+
+    def open_session() -> None:
+        try:
+            api.open(password=credentials.password)
+        finally:
+            # A cancelled asyncio waiter cannot stop its worker thread. The
+            # worker owns late cleanup even if the request/event loop is gone.
+            finished.set()
+            if abandoned.is_set():
+                close_abandoned_session()
+
+    session_key = None
     try:
-        await asyncio.wait_for(
-            asyncio.to_thread(api.open, password=credentials.password),
-            timeout=LS_LOGIN_TIMEOUT_SECONDS,
-        )
-    except asyncio.TimeoutError:
-        raise HTTPException(
-            status_code=504,
-            detail=f"Login LS timeout after {int(LS_LOGIN_TIMEOUT_SECONDS)}s",
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=401, detail=f"LimeSurvey login failed: {exc}")
+        try:
+            await asyncio.wait_for(asyncio.to_thread(open_session), timeout=LS_LOGIN_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(
+                status_code=504,
+                detail=f"Login LS timeout after {int(LS_LOGIN_TIMEOUT_SECONDS)}s",
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=401, detail=f"LimeSurvey login failed: {exc}") from exc
 
-    session_key = str(uuid.uuid4())
-    await store_limesurvey_session(
-        session_key,
-        url=limesurvey_url,
-        username=credentials.username,
-        remote_session_key=api.session_key,
-        owner=auth,
-    )
-
-    if LS_OPTIMIZER_ENABLED and not await get_cached_optimal_params(api):
-        background.add_task(optimize_user_account_params, api)
+        session_key = str(uuid.uuid4())
+        await store_limesurvey_session(
+            session_key,
+            url=limesurvey_url,
+            username=credentials.username,
+            remote_session_key=api.session_key,
+            owner=auth,
+        )
+        if LS_OPTIMIZER_ENABLED:
+            try:
+                if not await get_cached_optimal_params(api):
+                    background.add_task(optimize_user_account_params, api)
+            except Exception as exc:
+                # Optional tuning must not hide a successfully persisted login.
+                logger.warning("Login completed without optimizer scheduling (%s).", type(exc).__name__)
+    except BaseException:
+        abandoned.set()
+        if finished.is_set():
+            await asyncio.to_thread(close_abandoned_session)
+        if session_key is not None:
+            try:
+                await delete_limesurvey_session(session_key)
+            except Exception as exc:
+                logger.warning("Could not remove a failed local session write (%s).", type(exc).__name__)
+        raise
 
     return SessionKeyResp(session_key=session_key)
 

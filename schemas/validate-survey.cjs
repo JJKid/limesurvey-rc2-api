@@ -4049,15 +4049,33 @@ var coerce = {
 };
 var NEVER = INVALID;
 
+// dist/schemas/common.js
+var surveyCodeSchema = external_exports.string().min(1).regex(/^\S(?:[\s\S]*\S)?$/, "Codes cannot contain leading or trailing whitespace.");
+var jsonScalarSchema = external_exports.union([
+  external_exports.string(),
+  external_exports.number().finite(),
+  external_exports.boolean()
+]);
+var jsonPrimitiveSchema = external_exports.union([
+  jsonScalarSchema,
+  external_exports.null()
+]);
+var jsonValueSchema = external_exports.lazy(() => external_exports.union([
+  jsonPrimitiveSchema,
+  external_exports.array(jsonValueSchema),
+  external_exports.record(jsonValueSchema)
+]));
+var jsonObjectSchema = external_exports.record(jsonValueSchema);
+
 // dist/schemas/field-collections.js
 var surveyStructureOptionSchema = external_exports.object({
-  code: external_exports.string().min(1),
+  code: surveyCodeSchema,
   label: external_exports.string(),
   order: external_exports.number().int().nonnegative().optional()
 }).strict();
 var surveyStructureSubquestionSchema = external_exports.object({
   id: external_exports.string().optional(),
-  code: external_exports.string().min(1),
+  code: surveyCodeSchema,
   label: external_exports.string(),
   order: external_exports.number().int().nonnegative().optional()
 }).strict();
@@ -4077,31 +4095,14 @@ var surveyStructureMatrixSchema = external_exports.union([
   surveyStructureDualMatrixSchema
 ]);
 
-// dist/schemas/common.js
-var jsonScalarSchema = external_exports.union([
-  external_exports.string(),
-  external_exports.number().finite(),
-  external_exports.boolean()
-]);
-var jsonPrimitiveSchema = external_exports.union([
-  jsonScalarSchema,
-  external_exports.null()
-]);
-var jsonValueSchema = external_exports.lazy(() => external_exports.union([
-  jsonPrimitiveSchema,
-  external_exports.array(jsonValueSchema),
-  external_exports.record(jsonValueSchema)
-]));
-var jsonObjectSchema = external_exports.record(jsonValueSchema);
-
 // dist/schemas/conditions.js
 var surveyConditionReferenceSchema = external_exports.object({
-  fieldCode: external_exports.string().min(1),
-  responseItemCode: external_exports.string().min(1).optional()
+  fieldCode: surveyCodeSchema,
+  responseItemCode: surveyCodeSchema.optional()
 }).strict();
 var surveyComparisonConditionSchema = external_exports.object({
   type: external_exports.literal("comparison"),
-  reference: surveyConditionReferenceSchema,
+  responseReference: surveyConditionReferenceSchema,
   operator: external_exports.enum([
     "equals",
     "not-equals",
@@ -4114,11 +4115,11 @@ var surveyComparisonConditionSchema = external_exports.object({
 }).strict();
 var surveyAnsweredConditionSchema = external_exports.object({
   type: external_exports.enum(["answered", "not-answered"]),
-  reference: surveyConditionReferenceSchema
+  responseReference: surveyConditionReferenceSchema
 }).strict();
 var surveySelectionCountConditionSchema = external_exports.object({
   type: external_exports.literal("selection-count"),
-  reference: surveyConditionReferenceSchema,
+  responseReference: surveyConditionReferenceSchema,
   operator: external_exports.enum([
     "equals",
     "not-equals",
@@ -4129,6 +4130,9 @@ var surveySelectionCountConditionSchema = external_exports.object({
   ]),
   value: external_exports.number().int().nonnegative()
 }).strict();
+var surveyAnsweredCountConditionSchema = surveySelectionCountConditionSchema.extend({
+  type: external_exports.literal("answered-count")
+}).strict();
 var surveyConstantConditionSchema = external_exports.object({
   type: external_exports.literal("constant"),
   value: external_exports.boolean()
@@ -4137,6 +4141,7 @@ var surveyConditionSchema = external_exports.lazy(() => external_exports.union([
   surveyComparisonConditionSchema,
   surveyAnsweredConditionSchema,
   surveySelectionCountConditionSchema,
+  surveyAnsweredCountConditionSchema,
   surveyConstantConditionSchema,
   external_exports.object({
     type: external_exports.enum(["all", "any"]),
@@ -4206,10 +4211,10 @@ var surveyStructureResponseEncodingSchema = external_exports.object({
   unselectedLabel: external_exports.string().min(1).optional()
 }).strict().refine(({ selectedValue, unselectedValue }) => selectedValue !== unselectedValue, { message: "selectedValue and unselectedValue must be different." });
 var surveyStructureOtherResponseSchema = external_exports.object({
-  code: external_exports.string().min(1),
+  code: surveyCodeSchema,
   label: external_exports.string().min(1),
-  textResponseKey: external_exports.string().min(1),
-  commentResponseKey: external_exports.string().min(1).optional()
+  textResponseKey: surveyCodeSchema,
+  commentResponseKey: surveyCodeSchema.optional()
 }).strict();
 
 // dist/schemas/validation.js
@@ -4221,9 +4226,22 @@ var surveyStructureValidationSchema = external_exports.object({
   minSelections: external_exports.number().int().nonnegative().optional(),
   maxSelections: external_exports.number().int().nonnegative().optional(),
   integer: external_exports.boolean().optional(),
+  // ECMAScript RegExp source without delimiters or flags; Formly anchors string patterns.
   pattern: external_exports.string().optional(),
   messages: external_exports.record(external_exports.string()).optional()
 }).strict().superRefine((validation, context) => {
+  if (validation.pattern !== void 0) {
+    try {
+      new RegExp(validation.pattern);
+    } catch {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["pattern"],
+        message: "pattern must be valid ECMAScript regular expression source without flags.",
+        params: { reason: "invalid-validation-pattern" }
+      });
+    }
+  }
   const orderedPairs = [
     [validation.min, validation.max, "min", "max"],
     [validation.minLength, validation.maxLength, "minLength", "maxLength"],
@@ -4245,6 +4263,10 @@ var surveyPlatformIdentifierSchema = external_exports.string().regex(/^[a-z][a-z
 
 // dist/schemas/source/limesurvey.js
 var limeSurveyNativeValidationSchema = external_exports.object({
+  minimumNumericValueExpression: external_exports.string().optional(),
+  maximumNumericValueExpression: external_exports.string().optional(),
+  minimumAnswerExpression: external_exports.string().optional(),
+  maximumAnswerExpression: external_exports.string().optional(),
   minimumAnswersExpression: external_exports.string().optional(),
   maximumAnswersExpression: external_exports.string().optional(),
   questionValidationExpression: external_exports.string().optional(),
@@ -4256,15 +4278,15 @@ var limeSurveyNativeValidationSchema = external_exports.object({
 var limeSurveyQuestionSourceExtensionSchema = external_exports.object({
   type: external_exports.literal("limesurvey-question"),
   version: external_exports.literal("1.0.0"),
-  relevanceExpression: external_exports.string().optional(),
-  fullConditionExpression: external_exports.string().optional(),
+  questionRelevanceExpression: external_exports.string().optional(),
+  questionAndGroupRelevanceExpression: external_exports.string().optional(),
   dateTimeFormat: external_exports.string().optional(),
   nativeValidation: limeSurveyNativeValidationSchema.optional()
 }).strict();
 var limeSurveyGroupSourceExtensionSchema = external_exports.object({
   type: external_exports.literal("limesurvey-group"),
   version: external_exports.literal("1.0.0"),
-  relevanceExpression: external_exports.string().optional()
+  groupRelevanceExpression: external_exports.string().optional()
 }).strict();
 var limeSurveySourceExtensionSchema = external_exports.object({
   type: external_exports.literal("limesurvey-survey"),
@@ -4359,7 +4381,7 @@ var surveyDateValueTypeSchema = external_exports.enum([
 ]);
 var surveyStructureFieldBaseSchema = external_exports.object({
   id: external_exports.string().min(1),
-  code: external_exports.string().min(1),
+  code: surveyCodeSchema,
   type: surveyStructureFieldTypeSchema,
   label: external_exports.string(),
   groupId: external_exports.string().optional(),
@@ -4490,6 +4512,14 @@ function validateFieldRules(field, context) {
       addRuleIssue(context, `Field "${field.code}" has type "${field.type}", so it cannot declare minSelections or maxSelections. These rules apply only to fields that allow multiple selections.`, field, ["minSelections", "maxSelections"]);
     }
   }
+  if ("other" in field && field.other && field.options.some((option) => option.code === field.other?.code)) {
+    context.addIssue({
+      code: external_exports.ZodIssueCode.custom,
+      path: ["other", "code"],
+      message: "The Other response must use a code distinct from ordinary options.",
+      params: { reason: "other-option-code-collision", fieldCode: field.code }
+    });
+  }
   if ("other" in field && field.other?.commentResponseKey && field.type !== "multiple-choice-with-comments") {
     context.addIssue({
       code: external_exports.ZodIssueCode.custom,
@@ -4572,6 +4602,29 @@ function validateResponseEncoding(field, context) {
 function validateDefaultValue(field, context) {
   if (!("defaultValue" in field) || field.defaultValue === void 0)
     return;
+  const rules = field.validation;
+  const invalidDefault = (path = []) => context.addIssue({
+    code: external_exports.ZodIssueCode.custom,
+    path: ["defaultValue", ...path],
+    message: "defaultValue violates its field validation.",
+    params: { reason: "default-value-validation-mismatch", fieldCode: field.code }
+  });
+  const invalidNumber = (value) => rules?.min !== void 0 && value < rules.min || rules?.max !== void 0 && value > rules.max || rules?.integer === true && !Number.isInteger(value);
+  if ((field.type === "number" || field.type === "range") && invalidNumber(field.defaultValue))
+    invalidDefault();
+  if (field.type === "short-text" || field.type === "long-text") {
+    if (rules?.minLength !== void 0 && field.defaultValue.length < rules.minLength || rules?.maxLength !== void 0 && field.defaultValue.length > rules.maxLength)
+      invalidDefault();
+    if (rules?.pattern !== void 0) {
+      let pattern;
+      try {
+        pattern = new RegExp(`${rules.pattern.startsWith("^") ? "" : "^"}${rules.pattern}${rules.pattern.endsWith("$") ? "" : "$"}`);
+      } catch {
+      }
+      if (pattern && !pattern.test(field.defaultValue))
+        invalidDefault();
+    }
+  }
   if ("options" in field) {
     const allowed = new Set(field.options.map((option) => option.code));
     if ("other" in field && field.other)
@@ -4582,6 +4635,8 @@ function validateDefaultValue(field, context) {
         addUnknownDefault(context, field, Array.isArray(field.defaultValue) ? [index] : [], code);
     });
     if (Array.isArray(field.defaultValue)) {
+      if (rules?.minSelections !== void 0 && field.defaultValue.length < rules.minSelections || rules?.maxSelections !== void 0 && field.defaultValue.length > rules.maxSelections)
+        invalidDefault();
       const duplicate = firstDuplicate(field.defaultValue);
       if (duplicate) {
         context.addIssue({
@@ -4629,13 +4684,8 @@ function validateDefaultValue(field, context) {
         }
       }
       if (field.matrix.mode === "number" && typeof value === "number") {
-        const rules = field.validation;
-        if (rules?.min !== void 0 && value < rules.min || rules?.max !== void 0 && value > rules.max || rules?.integer && !Number.isInteger(value))
-          context.addIssue({
-            code: external_exports.ZodIssueCode.custom,
-            path: ["defaultValue", rowCode, columnCode],
-            message: "Numeric matrix default violates its cell validation."
-          });
+        if (invalidNumber(value))
+          invalidDefault([rowCode, columnCode]);
       }
     });
   });
@@ -4739,6 +4789,29 @@ var surveyLanguageSchema = external_exports.string().min(1).refine((value) => {
   }
 }, "Use a language tag such as es, es-MX or en.");
 
+// dist/schemas/response-keys.js
+function fieldResponseKeys(field, prefix = "") {
+  const key = prefix ? `${prefix}_${field.code}` : field.code;
+  if (field.type === "display")
+    return [];
+  if (field.type === "custom")
+    return field.childrenFields.flatMap((child) => fieldResponseKeys(child, key));
+  if (field.type === "matrix")
+    return field.matrix.rows.flatMap((row) => field.matrix.mode === "single" ? [`${key}_${row.code}`] : field.matrix.columns.map((column) => `${key}_${row.code}_${column.code}`));
+  if (field.type === "multiple-input")
+    return field.subquestions.map((item) => `${key}_${item.code}`);
+  if (field.type === "ranking")
+    return field.options.map((_, index) => `${key}_${index + 1}`);
+  const multiple = field.type === "multiple-choice" || field.type === "multiple-choice-with-comments";
+  const keys = multiple ? field.options.flatMap((option) => field.type === "multiple-choice-with-comments" ? [`${key}_${option.code}`, `${key}_${option.code}_comment`] : [`${key}_${option.code}`]) : field.type === "list-with-comment" ? [key, `${key}_comment`] : [key];
+  if ("other" in field && field.other) {
+    keys.push(field.other.textResponseKey);
+    if (field.other.commentResponseKey)
+      keys.push(field.other.commentResponseKey);
+  }
+  return keys;
+}
+
 // dist/schemas/survey.js
 var SURVEY_STRUCTURE_CONTRACT_VERSION = "2.0.0";
 var CONDITION_REFERENCE_MISSING_FIELD = "condition-reference-missing-field";
@@ -4769,6 +4842,19 @@ function validateSurveyInvariants(survey, context) {
     groups.add(group.id);
   });
   const fieldsByCode = /* @__PURE__ */ new Map();
+  const responseKeys = /* @__PURE__ */ new Set();
+  survey.fields.forEach((field, index) => {
+    for (const responseKey of fieldResponseKeys(field)) {
+      if (responseKeys.has(responseKey))
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["fields", index],
+          message: `Response key "${responseKey}" is produced more than once and would overwrite an answer.`,
+          params: { reason: "duplicate-response-key", fieldCode: field.code, responseKey }
+        });
+      responseKeys.add(responseKey);
+    }
+  });
   const fieldIds = /* @__PURE__ */ new Set();
   const responseItems = /* @__PURE__ */ new Map();
   const itemCodes = (field) => {
@@ -4921,28 +5007,28 @@ function validateConditionReferences(condition, fieldsByCode, context, path, own
     validateConditionReferences(condition.condition, fieldsByCode, context, [...path, "condition"], owner, itemCodes);
     return;
   }
-  if (!("reference" in condition))
+  if (!("responseReference" in condition))
     return;
-  const referencedField = fieldsByCode.get(condition.reference.fieldCode);
+  const referencedField = fieldsByCode.get(condition.responseReference.fieldCode);
   if (!referencedField) {
     context.addIssue({
       code: external_exports.ZodIssueCode.custom,
-      path: [...path, "reference", "fieldCode"],
-      message: `The visibility condition of ${owner} cannot be evaluated because it references field code "${condition.reference.fieldCode}", but no field with that code exists in the normalized survey.`,
+      path: [...path, "responseReference", "fieldCode"],
+      message: `The visibility condition of ${owner} cannot be evaluated because it references field code "${condition.responseReference.fieldCode}", but no field with that code exists in the normalized survey.`,
       params: {
         reason: CONDITION_REFERENCE_MISSING_FIELD,
-        fieldCode: condition.reference.fieldCode,
+        fieldCode: condition.responseReference.fieldCode,
         owner
       }
     });
     return;
   }
-  const responseItemCode = condition.reference.responseItemCode;
-  if (responseItemCode && !itemCodes(referencedField).has(responseItemCode)) {
+  const responseItemCode = condition.responseReference.responseItemCode;
+  if (responseItemCode && !conditionResponseItemCodes(referencedField).has(responseItemCode)) {
     context.addIssue({
       code: external_exports.ZodIssueCode.custom,
-      path: [...path, "reference", "responseItemCode"],
-      message: `The visibility condition of ${owner} references response item code "${responseItemCode}", but field "${referencedField.code}" does not contain that option, subquestion, matrix row, or row-column combination.`,
+      path: [...path, "responseReference", "responseItemCode"],
+      message: `The visibility condition of ${owner} references response item code "${responseItemCode}", but field "${referencedField.code}" does not produce that scalar response item in this variant.`,
       params: {
         reason: CONDITION_REFERENCE_MISSING_RESPONSE_ITEM,
         fieldCode: referencedField.code,
@@ -4951,10 +5037,27 @@ function validateConditionReferences(condition, fieldsByCode, context, path, own
       }
     });
   }
+  if (condition.type === "comparison") {
+    const collection = ["custom", "display", "multiple-input", "multiple-choice", "multiple-choice-with-comments", "ranking", "matrix"].includes(referencedField.type);
+    if (collection && !responseItemCode)
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: [...path, "responseReference"],
+        message: "A comparison requires one scalar response, not an entire collection or display field.",
+        params: { reason: "comparison-requires-scalar-response", fieldCode: referencedField.code, owner }
+      });
+    if (!comparisonValueMatches(referencedField, responseItemCode, condition.value))
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: [...path, "value"],
+        message: "The comparison value does not match the referenced response type or its declared options.",
+        params: { reason: "comparison-value-type-mismatch", fieldCode: referencedField.code, responseItemCode, owner }
+      });
+  }
   if (condition.type === "selection-count" && !(referencedField.type === "multiple-choice" || referencedField.type === "multiple-choice-with-comments" || referencedField.type === "ranking" || referencedField.type === "matrix" && referencedField.matrix.mode === "multiple")) {
     context.addIssue({
       code: external_exports.ZodIssueCode.custom,
-      path: [...path, "reference", "fieldCode"],
+      path: [...path, "responseReference", "fieldCode"],
       message: `The selection-count condition of ${owner} requires a field that can contain multiple selected responses; field "${referencedField.code}" has type "${referencedField.type}".`,
       params: {
         reason: "selection-count-incompatible-field-type",
@@ -4962,6 +5065,22 @@ function validateConditionReferences(condition, fieldsByCode, context, path, own
         semanticFieldType: referencedField.type,
         owner
       }
+    });
+  }
+  if (condition.type === "answered-count" && !(referencedField.type === "multiple-input" || referencedField.type === "matrix" && referencedField.matrix.mode !== "multiple")) {
+    context.addIssue({
+      code: external_exports.ZodIssueCode.custom,
+      path: [...path, "responseReference", "fieldCode"],
+      message: `Answered-count requires multiple inputs or matrix response cells in field "${referencedField.code}".`,
+      params: { reason: "answered-count-incompatible-field-type", fieldCode: referencedField.code, owner }
+    });
+  }
+  if (["selection-count", "answered-count"].includes(condition.type) && responseItemCode) {
+    context.addIssue({
+      code: external_exports.ZodIssueCode.custom,
+      path: [...path, "responseReference", "responseItemCode"],
+      message: "A count refers to the entire question, not an individual response item.",
+      params: { reason: "count-requires-whole-field", fieldCode: referencedField.code, owner }
     });
   }
   if (condition.type === "comparison" && [
@@ -4989,6 +5108,8 @@ function validateConditionReferences(condition, fieldsByCode, context, path, own
   }
 }
 function fieldResponseItemCodes(field) {
+  if (field.type === "ranking")
+    return new Set(field.options.map((_, index) => String(index + 1)));
   if ("options" in field)
     return new Set(field.options.map((option) => option.code));
   if (field.type === "multiple-input")
@@ -5002,6 +5123,36 @@ function fieldResponseItemCodes(field) {
     return values;
   }
   return /* @__PURE__ */ new Set();
+}
+function conditionResponseItemCodes(field) {
+  if (field.type === "multiple-choice" || field.type === "multiple-choice-with-comments") {
+    return /* @__PURE__ */ new Set([...field.options.map((option) => option.code), ...field.other ? [field.other.code] : []]);
+  }
+  if (field.type === "matrix")
+    return new Set(field.matrix.rows.flatMap((row) => field.matrix.mode === "single" ? [row.code] : field.matrix.columns.map((column) => `${row.code}_${column.code}`)));
+  if (field.type === "ranking" || field.type === "multiple-input")
+    return fieldResponseItemCodes(field);
+  return /* @__PURE__ */ new Set();
+}
+function comparisonValueMatches(field, item, value) {
+  if (value === null)
+    return true;
+  if (field.type === "number" || field.type === "range" || field.type === "matrix" && field.matrix.mode === "number")
+    return typeof value === "number";
+  if (field.type === "multiple-input")
+    return true;
+  if (field.type === "boolean" || field.type === "multiple-choice" || field.type === "multiple-choice-with-comments" || field.type === "matrix" && field.matrix.mode === "multiple") {
+    return typeof value === "boolean" || value === field.responseEncoding?.selectedValue || value === field.responseEncoding?.unselectedValue;
+  }
+  if (field.type === "matrix" && field.matrix.mode === "single")
+    return field.matrix.columns.some((column) => column.code === value);
+  if (field.type === "matrix" && field.matrix.mode === "dual-single") {
+    const scale = field.matrix.columns.find((column) => field.matrix.rows.some((row) => `${row.code}_${column.code}` === item));
+    return scale?.options.some((option) => option.code === value) ?? false;
+  }
+  if ("options" in field)
+    return field.options.some((option) => option.code === value) || value === field.other?.code;
+  return typeof value === "string";
 }
 
 // dist/schemas/diagnostics.js

@@ -108,8 +108,12 @@ if not IS_PRODUCTION:
 REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD") or None
+REDIS_USERNAME = os.getenv("REDIS_USERNAME") or None
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 REDIS_SSL = os.getenv("REDIS_SSL", "false").lower() == "true"
+REDIS_SSL_CA_CERTS = os.getenv("REDIS_SSL_CA_CERTS") or None
+if IS_PRODUCTION and not REDIS_PASSWORD:
+    raise RuntimeError("REDIS_PASSWORD is required in production; a private network alone is not authentication.")
 LS_SESSION_TTL_SECONDS = int(os.getenv("LS_SESSION_TTL_SECONDS", "1800"))
 ALLOW_IN_MEMORY_STATE = os.getenv(
     "ALLOW_IN_MEMORY_STATE",

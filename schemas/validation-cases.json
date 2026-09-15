@@ -265,7 +265,7 @@
           "visibility": {
             "condition": {
               "type": "answered",
-              "reference": {
+              "responseReference": {
                 "fieldCode": "MISSING"
               }
             }
@@ -290,7 +290,7 @@
           "visibility": {
             "condition": {
               "type": "answered",
-              "reference": {
+              "responseReference": {
                 "fieldCode": "Q01"
               }
             }
@@ -325,7 +325,7 @@
           "visibility": {
             "condition": {
               "type": "answered",
-              "reference": {
+              "responseReference": {
                 "fieldCode": "Q01",
                 "responseItemCode": "A9"
               }
@@ -1565,6 +1565,139 @@
                 ]
               }
             ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "flattened response key collision",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "container",
+          "code": "BLOCK",
+          "type": "custom",
+          "label": "Block",
+          "childrenFields": [
+            {
+              "id": "q1",
+              "code": "Q01",
+              "type": "short-text",
+              "label": "Pregunta 1"
+            }
+          ]
+        },
+        {
+          "id": "q2",
+          "code": "BLOCK_Q01",
+          "type": "short-text",
+          "label": "Pregunta 1"
+        }
+      ]
+    }
+  },
+  {
+    "name": "count answers in numeric matrix",
+    "valid": true,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "matrix",
+          "label": "Pregunta 1",
+          "matrix": {
+            "mode": "number",
+            "rows": [
+              {
+                "code": "R1",
+                "label": "Fila 1"
+              }
+            ],
+            "columns": [
+              {
+                "code": "A1",
+                "label": "Opción 1"
+              },
+              {
+                "code": "A2",
+                "label": "Opción 2"
+              }
+            ]
+          },
+          "validation": {
+            "min": 0,
+            "max": 10
+          },
+          "visibility": {
+            "condition": {
+              "type": "answered-count",
+              "responseReference": {
+                "fieldCode": "Q01"
+              },
+              "operator": "greater-than-or-equal",
+              "value": 2
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "count answers on plain text",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "visibility": {
+            "condition": {
+              "type": "answered-count",
+              "responseReference": {
+                "fieldCode": "Q01"
+              },
+              "operator": "greater-than-or-equal",
+              "value": 2
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "old reference property rejected",
+    "valid": false,
+    "contract": "SurveyStructure",
+    "value": {
+      "contractVersion": "2.0.0",
+      "id": "synthetic",
+      "fields": [
+        {
+          "id": "q1",
+          "code": "Q01",
+          "type": "short-text",
+          "label": "Pregunta 1",
+          "visibility": {
+            "condition": {
+              "type": "answered",
+              "reference": {
+                "fieldCode": "Q01"
+              }
+            }
           }
         }
       ]
